@@ -1,0 +1,22 @@
+{
+  "date": "2026-09-11",
+  "lesson": 1,
+  "topic": "APDL 基本结构、单位制与参数化：燃料芯块稳态导热起步",
+  "difficulty": "入门",
+  "commands": [
+    "/CLEAR",
+    "/PREP7",
+    "ET",
+    "MP",
+    "RECTNG",
+    "AMESH",
+    "BFE",
+    "SFL",
+    "/SOLU",
+    "/POST1",
+    "*GET"
+  ],
+  "validation_status": "static_only",
+  "validation_note": "本次未启动 MAPDL；已按 APDL 命令分段和 SI 单位一致性进行静态检查。",
+  "prerequisite": null
+}

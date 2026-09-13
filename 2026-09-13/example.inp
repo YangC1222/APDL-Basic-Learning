@@ -1,0 +1,67 @@
+! Lesson 3 - axisymmetric fuel rod with volumetric heat and convection
+! SI units: m, kg, s, K, W, Pa
+/CLEAR
+/FILNAME,lesson3_fuel_heat
+/PREP7
+
+! ---- Parameters ----
+r_fuel  = 4.10e-3
+r_clad  = 4.75e-3
+length  = 0.10
+k_fuel  = 3.0
+k_clad  = 16.0
+qvol    = 2.0e8
+hconv   = 2.5e4
+tbulk   = 570.0
+esize_r = 0.20e-3
+
+! ---- Element and materials ----
+ET,1,PLANE55
+KEYOPT,1,3,1
+MP,KXX,1,k_fuel
+MP,KXX,2,k_clad
+
+! ---- Axisymmetric r-z geometry (X=r, Y=z) ----
+RECTNG,0,r_fuel,0,length
+RECTNG,r_fuel,r_clad,0,length
+AGLUE,ALL
+
+! Fuel area: centroid radius below r_fuel
+ASEL,S,LOC,X,0,r_fuel
+AATT,1,,1
+! Cladding area: centroid radius above r_fuel
+ASEL,S,LOC,X,r_fuel,r_clad
+AATT,2,,1
+ALLSEL,ALL
+
+! ---- Mesh ----
+ESIZE,esize_r
+AMESH,ALL
+
+! ---- Fuel volumetric heat generation only ----
+ESEL,S,MAT,,1
+BFE,ALL,HGEN,,qvol
+ALLSEL,ALL
+
+! ---- Coolant convection on outer cladding surface ----
+LSEL,S,LOC,X,r_clad
+SFL,ALL,CONV,hconv,tbulk
+ALLSEL,ALL
+FINISH
+
+! ---- Steady thermal solution ----
+/SOLU
+ANTYPE,STATIC
+SOLVE
+FINISH
+
+! ---- Results ----
+/POST1
+SET,LAST
+PLNSOL,TEMP
+*GET,tmax,NODE,0,MAX,TEMP
+*CFOPEN,lesson3_results,txt
+*VWRITE,tmax
+('Maximum nodal temperature [K] = ',E16.8)
+*CFCLOS
+FINISH

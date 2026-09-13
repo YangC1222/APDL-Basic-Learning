@@ -1,0 +1,107 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07131f">
+<title>第 2 课 · 一维燃料棒稳态径向导热：芯块、等效气隙与包壳</title><style>
+:root{--bg:#06111b;--panel:#0d2130;--paper:#f6faf8;--ink:#102936;--muted:#617681;--cyan:#62e0df;--gold:#ffd166;--line:#dce8e7}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#173f50 0,transparent 35%),var(--bg);color:#e9f7f5;font:16px/1.78 Inter,"PingFang SC","Microsoft YaHei",sans-serif}a{color:inherit}.shell{width:min(1060px,calc(100% - 28px));margin:auto}header{padding:56px 0 36px}.back{color:var(--cyan);text-decoration:none;font-weight:800}.eyebrow{margin-top:30px;color:var(--cyan);font-weight:900;letter-spacing:.13em}h1{font-size:clamp(34px,6vw,62px);line-height:1.12;margin:10px 0}.meta{color:#acc4c9}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}.button{padding:11px 16px;border-radius:999px;background:var(--cyan);color:#06212a;text-decoration:none;font-weight:900}.button.secondary{background:transparent;color:var(--cyan);border:1px solid #2a6170}main{background:var(--paper);color:var(--ink);border-radius:22px 22px 0 0;padding:34px clamp(20px,5vw,64px) 72px}.status{border-left:5px solid var(--gold);background:#fff5d5;padding:12px 16px;border-radius:0 9px 9px 0}h2{font-size:24px;margin:34px 0 10px;color:#0c6870}h3{color:#0c6870}p,li{max-width:850px}code{background:#e4efed;border-radius:5px;padding:2px 5px;color:#0b5f67}.commands{display:flex;gap:7px;flex-wrap:wrap;margin:18px 0 28px}.commands span{background:#dcefed;color:#135d63;border-radius:999px;padding:4px 9px;font:13px Consolas,monospace}blockquote{margin:28px 0;border-left:4px solid #e0a92f;background:#fff7dc;padding:13px 16px}pre{overflow:auto;background:#071621;color:#d8efea;padding:22px;border-radius:14px;font:14px/1.65 Consolas,monospace}footer{color:#8ba5ac;padding:25px 0 42px}@media(max-width:600px){header{padding-top:34px}main{border-radius:16px 16px 0 0}}
+</style></head><body><header class="shell"><a class="back" href="../">← 返回课程首页</a><div class="eyebrow">2026-09-12 · LESSON 2</div><h1>一维燃料棒稳态径向导热：芯块、等效气隙与包壳</h1><p class="meta">难度：入门 · 前置课程：2026-09-11 第1课：APDL基本结构、单位制与参数化</p><div class="actions"><a class="button" href="example.inp" download>下载 APDL 示例</a><a class="button secondary" href="README.md">查看 Markdown 讲义</a></div></header><main class="shell"><p class="status"><strong>验证状态：</strong>已静态检查，尚未运行 MAPDL<br>已完成 APDL 命令分段、材料选择、边界选择及 SI 单位一致性静态检查；未启动 MAPDL。</p><div class="commands"><span>/CLEAR</span><span>/PREP7</span><span>ET</span><span>KEYOPT</span><span>MP</span><span>RECTNG</span><span>AGLUE</span><span>ASEL</span><span>AATT</span><span>ESEL</span><span>BFE</span><span>LSEL</span><span>SFL</span><span>ANTYPE</span><span>SOLVE</span><span>*GET</span><span>*CFOPEN</span><span>*VWRITE</span></div><h2>今日目标</h2>
+<p>建立二维轴对称的燃料芯块、气隙和包壳三层稳态导热模型，正确分配材料、施加芯块体积热源与包壳外表面对流，并提取最高温度。</p>
+<h2>物理问题</h2>
+<p>模型取燃料棒局部轴向段：芯块半径 <code>4.00 mm</code>，气隙外半径 <code>4.08 mm</code>，包壳外半径 <code>4.65 mm</code>，轴向长度 <code>10 mm</code>。UO₂ 芯块发热率为 <code>3.0×10⁸ W/m³</code>；芯块、等效气隙和包壳导热系数分别为 <code>3.0、0.30、16.0 W/(m·K)</code>；包壳外表面对流系数为 <code>2.0×10⁴ W/(m²·K)</code>，冷却剂体温为 <code>580 K</code>。</p>
+<p>采用 m–kg–s–K–W–Pa。示例把气隙表示为具有等效导热系数的实体薄层，没有处理辐射换热、燃料开裂、接触、温度相关物性和轴向功率变化，适用于学习分区建模与边界条件。</p>
+<h2>关键命令</h2>
+<ul>
+<li><code>ET,1,PLANE55</code> 与 <code>KEYOPT,1,3,1</code>：定义轴对称二维热单元。</li>
+<li><code>MP,KXX</code>：为三种材料定义导热系数。</li>
+<li><code>RECTNG</code>、<code>AGLUE</code>：建立三个相邻径向区域并共享边界。</li>
+<li><code>ASEL,S,CENT,X</code> 与 <code>AATT</code>：按面积质心位置分配芯块、气隙和包壳材料。</li>
+<li><code>ESEL,S,MAT,,1</code> 与 <code>BFE,ALL,HGEN</code>：只向燃料材料施加体积热源。</li>
+<li><code>LSEL,S,LOC,X,RCLD</code> 与 <code>SFL,ALL,CONV</code>：选择包壳外圆并施加对流。</li>
+<li><code>*GET</code>、<code>*CFOPEN</code>、<code>*VWRITE</code>：提取温度极值并写入文本文件。</li>
+</ul>
+<p>完整脚本见 [example.inp](/D:/codex/Xmol/apdl-tutorials/2026-09-12/example.inp)。</p>
+<h2>预期结果</h2>
+<p>最高温度应位于芯块中心线附近，温度沿半径总体下降。气隙导热系数较低，因此气隙两侧应出现较大的温降。减小气隙厚度或提高 <code>KGAP</code> 应降低芯块中心温度。这里只说明应检查的趋势，不给出未经求解的数值结果。</p>
+<h2>验证清单</h2>
+<ul>
+<li>单位：确认毫米已换算为米，热源为 W/m³，对流系数为 W/(m²·K)。</li>
+<li>分区：用 <code>EPLOT</code> 或材料编号检查体积热源是否只施加在材料 1。</li>
+<li>边界：确认对流只加载在 <code>X=RCLD</code> 的外圆线，轴线没有错误施加对流。</li>
+<li>能量：比较芯块总体积发热与包壳外表面对流散热。</li>
+<li>网格：将 <code>ESIZE_R</code> 从 <code>1.0E-4 m</code> 减半，比较 <code>TMAX</code> 的变化。</li>
+</ul>
+<h2>常见错误</h2>
+<ol>
+<li><code>AGLUE</code> 后仍按面积编号分配材料。布尔操作可能重编号，应按质心位置或绘图复核。</li>
+<li>把气隙等效导热系数直接当成接触导热系数。前者单位为 W/(m·K)，接触导热系数单位为 W/(m²·K)。</li>
+<li>对所有单元施加 <code>HGEN</code>，会让气隙和包壳错误发热。加载前必须用材料号筛选燃料单元。</li>
+</ol>
+<h2>练习</h2>
+<ol>
+<li>将 <code>KGAP</code> 改为 <code>0.15、0.30、0.60 W/(m·K)</code>，比较最高温度和气隙温降。</li>
+<li>将均匀体积热源替换为随轴向变化的分段功率，为后续燃料棒温度场—结构场传递准备载荷数据。</li>
+</ol>
+<h2>验证状态</h2>
+<p>已完成命令结构、选择逻辑和 SI 单位一致性的静态检查；本次未启动 MAPDL 求解。</p><h2>完整 example.inp</h2><pre>! 第2课：燃料芯块—气隙—包壳稳态径向导热（SI单位）
+/CLEAR
+/FILNAME,fuel_rod_radial,1
+/PREP7
+! m, kg, s, K, W, Pa
+RPEL=4.00E-3
+RGAP=4.08E-3
+RCLD=4.65E-3
+LSEG=1.00E-2
+QGEN=3.00E8
+KUEL=3.0
+KGAP=0.30
+KCLD=16.0
+HCOOL=2.00E4
+TBULK=580
+ESIZE_R=1.0E-4
+
+ET,1,PLANE55
+KEYOPT,1,3,1
+MP,KXX,1,KUEL
+MP,KXX,2,KGAP
+MP,KXX,3,KCLD
+
+RECTNG,0,RPEL,0,LSEG
+RECTNG,RPEL,RGAP,0,LSEG
+RECTNG,RGAP,RCLD,0,LSEG
+AGLUE,ALL
+
+ASEL,S,CENT,X,0,RPEL
+AATT,1,,1
+ASEL,S,CENT,X,RPEL,RGAP
+AATT,2,,1
+ASEL,S,CENT,X,RGAP,RCLD
+AATT,3,,1
+ALLSEL,ALL
+ESIZE,ESIZE_R
+AMESH,ALL
+
+! 体积热源只施加于燃料芯块
+ESEL,S,MAT,,1
+BFE,ALL,HGEN,,QGEN
+ALLSEL,ALL
+
+! 包壳外表面对流
+LSEL,S,LOC,X,RCLD
+SFL,ALL,CONV,HCOOL,TBULK
+ALLSEL,ALL
+FINISH
+
+/SOLU
+ANTYPE,STATIC
+SOLVE
+FINISH
+
+/POST1
+SET,LAST
+PLNSOL,TEMP
+*GET,TMAX,NODE,0,MAX,TEMP
+*GET,TMIN,NODE,0,MIN,TEMP
+*CFOPEN,radial_results,txt
+*VWRITE,TMAX,TMIN
+(&#x27;TMAX_K=&#x27;,E16.8,&#x27;, TMIN_K=&#x27;,E16.8)
+*CFCLOS
+FINISH
+</pre></main><footer class="shell">ANSYS APDL 反应堆热工结构每日学习 · 示例用于建模训练和命令理解</footer></body></html>

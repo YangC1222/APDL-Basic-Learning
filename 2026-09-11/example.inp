@@ -1,0 +1,42 @@
+/CLEAR,START
+/FILNAME,fuel_rod_lesson01
+/PREP7
+! Lesson 01: APDL structure, SI units, and parameters
+! SI units used consistently: m, kg, s, K, W, Pa
+
+! Geometry: a short UO2 fuel-pellet surrogate, axisymmetric 2-D
+RPEL=0.004
+LPEL=0.010
+QGEN=3.0E8
+KUEL=2.8
+HCOOL=2.0E4
+TBULK=580
+
+ET,1,PLANE55
+KEYOPT,1,3,1
+MP,KXX,1,KUEL
+
+! Rectangle is revolved conceptually about x=0; x is radius, y is axial coordinate
+RECTNG,0,RPEL,0,LPEL
+ESIZE,RPEL/12
+AMESH,ALL
+
+! Volumetric heat source and outer-radius convection boundary
+ALLSEL,ALL
+BFE,ALL,HGEN,,QGEN
+LSEL,S,LOC,X,RPEL
+SFL,ALL,CONV,HCOOL,TBULK
+ALLSEL,ALL
+
+/SOLU
+ANTYPE,STATIC
+SOLVE
+FINISH
+
+/POST1
+SET,LAST
+PLNSOL,TEMP
+*GET,TMAX,PLNSOL,0,MAX
+*VWRITE,TMAX
+('Maximum temperature [K] = ',F12.3)
+FINISH

@@ -1,0 +1,85 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07131f">
+<title>第 1 课 · APDL 基本结构、单位制与参数化：燃料芯块稳态导热起步</title><style>
+:root{--bg:#06111b;--panel:#0d2130;--paper:#f6faf8;--ink:#102936;--muted:#617681;--cyan:#62e0df;--gold:#ffd166;--line:#dce8e7}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#173f50 0,transparent 35%),var(--bg);color:#e9f7f5;font:16px/1.78 Inter,"PingFang SC","Microsoft YaHei",sans-serif}a{color:inherit}.shell{width:min(1060px,calc(100% - 28px));margin:auto}header{padding:56px 0 36px}.back{color:var(--cyan);text-decoration:none;font-weight:800}.eyebrow{margin-top:30px;color:var(--cyan);font-weight:900;letter-spacing:.13em}h1{font-size:clamp(34px,6vw,62px);line-height:1.12;margin:10px 0}.meta{color:#acc4c9}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}.button{padding:11px 16px;border-radius:999px;background:var(--cyan);color:#06212a;text-decoration:none;font-weight:900}.button.secondary{background:transparent;color:var(--cyan);border:1px solid #2a6170}main{background:var(--paper);color:var(--ink);border-radius:22px 22px 0 0;padding:34px clamp(20px,5vw,64px) 72px}.status{border-left:5px solid var(--gold);background:#fff5d5;padding:12px 16px;border-radius:0 9px 9px 0}h2{font-size:24px;margin:34px 0 10px;color:#0c6870}h3{color:#0c6870}p,li{max-width:850px}code{background:#e4efed;border-radius:5px;padding:2px 5px;color:#0b5f67}.commands{display:flex;gap:7px;flex-wrap:wrap;margin:18px 0 28px}.commands span{background:#dcefed;color:#135d63;border-radius:999px;padding:4px 9px;font:13px Consolas,monospace}blockquote{margin:28px 0;border-left:4px solid #e0a92f;background:#fff7dc;padding:13px 16px}pre{overflow:auto;background:#071621;color:#d8efea;padding:22px;border-radius:14px;font:14px/1.65 Consolas,monospace}footer{color:#8ba5ac;padding:25px 0 42px}@media(max-width:600px){header{padding-top:34px}main{border-radius:16px 16px 0 0}}
+</style></head><body><header class="shell"><a class="back" href="../">← 返回课程首页</a><div class="eyebrow">2026-09-11 · LESSON 1</div><h1>APDL 基本结构、单位制与参数化：燃料芯块稳态导热起步</h1><p class="meta">难度：入门 · 前置课程：None</p><div class="actions"><a class="button" href="example.inp" download>下载 APDL 示例</a><a class="button secondary" href="README.md">查看 Markdown 讲义</a></div></header><main class="shell"><p class="status"><strong>验证状态：</strong>已静态检查，尚未运行 MAPDL<br>本次未启动 MAPDL；已按 APDL 命令分段和 SI 单位一致性进行静态检查。</p><div class="commands"><span>/CLEAR</span><span>/PREP7</span><span>ET</span><span>MP</span><span>RECTNG</span><span>AMESH</span><span>BFE</span><span>SFL</span><span>/SOLU</span><span>/POST1</span><span>*GET</span></div><h2>今日目标</h2>
+<p>建立一个采用 SI 单位制的二维轴对称 UO₂ 燃料芯块稳态导热示例，并能在后处理中读取最高温度。</p>
+<h2>物理问题</h2>
+<p>模型用半径 <code>RPEL=0.004 m</code>、长度 <code>LPEL=0.010 m</code> 的短燃料芯块代表燃料棒中的局部轴向段。芯块有均匀体积热源 <code>QGEN=3.0E8 W/m³</code>，外圆周与冷却剂之间用 <code>HCOOL=2.0E4 W/(m²·K)</code> 和 <code>TBULK=580 K</code> 表示对流换热。这里的数值只用于 APDL 学习，不是任何堆型的设计输入。</p>
+<p>采用 **m–kg–s–K–W–Pa** 的 SI 单位制。APDL 不会替用户检查单位；导热系数、体积热源、对流系数和几何尺寸必须与它一致。示例没有包壳、间隙或轴向端面换热，因此只适合作为命令和量纲检查的起点。</p>
+<h2>关键命令</h2>
+<ul>
+<li><code>/PREP7</code>：进入前处理。</li>
+<li><code>ET,1,PLANE55</code>：定义二维热传导单元；<code>KEYOPT,1,3,1</code> 设为轴对称。</li>
+<li><code>MP,KXX,1,KUEL</code>：为材料 1 指定导热系数。</li>
+<li><code>RECTNG</code> 与 <code>AMESH</code>：建立并网格化截面。</li>
+<li><code>BFE,ALL,HGEN,,QGEN</code>：向全部单元施加体积热源。</li>
+<li><code>SFL,ALL,CONV,HCOOL,TBULK</code>：向选定外边界施加对流边界。</li>
+<li><code>ANTYPE,STATIC</code>：稳态热分析。</li>
+<li><code>PLNSOL,TEMP</code> 与 <code>*GET</code>：显示温度场并提取最大温度。</li>
+</ul>
+<p>完整输入文件见 [example.inp](/D:/codex/Xmol/apdl-tutorials/2026-09-11/example.inp)。</p>
+<h2>预期结果</h2>
+<p>温度应从外表面对流边界向芯块中心升高。改变 <code>QGEN</code> 应提高最高温度；提高 <code>HCOOL</code> 应降低最高温度。不要把未实际求解的数值当作结果。</p>
+<h2>验证清单</h2>
+<ul>
+<li>检查 <code>RPEL</code> 和 <code>LPEL</code> 是否以米输入，<code>QGEN</code> 是否为 W/m³。</li>
+<li>用体积积分的发热功率与外表面对流散热作能量平衡检查。</li>
+<li>将单元尺寸从 <code>RPEL/12</code> 减半，比较最高温度的变化。</li>
+<li>检查外圆边界是否确实由 <code>LSEL,S,LOC,X,RPEL</code> 选中。</li>
+</ul>
+<h2>常见错误</h2>
+<ol>
+<li>把毫米数值直接写入米制模型，会使体积热源总功率失真九个数量级。先统一单位再建模。</li>
+<li>忘记设置轴对称选项，会把模型当作平面薄片计算。检查 <code>KEYOPT,1,3,1</code>。</li>
+<li>在 <code>SFL</code> 前未正确选择外圆线，导致对流施加在错误边界。用 <code>LPLOT</code> 或选择计数核查。</li>
+</ol>
+<h2>练习</h2>
+<ol>
+<li>将 <code>QGEN</code> 分别改为 <code>2.0E8</code> 与 <code>4.0E8 W/m³</code>，记录最高温度并检查趋势。</li>
+<li>增加一层包壳和燃料—包壳间隙；下一课将进一步处理燃料棒径向导热。</li>
+</ol>
+<h2>验证状态</h2>
+<p>本教程只完成静态检查，尚未在本机 MAPDL 中实际求解。</p><h2>完整 example.inp</h2><pre>/CLEAR,START
+/FILNAME,fuel_rod_lesson01
+/PREP7
+! Lesson 01: APDL structure, SI units, and parameters
+! SI units used consistently: m, kg, s, K, W, Pa
+
+! Geometry: a short UO2 fuel-pellet surrogate, axisymmetric 2-D
+RPEL=0.004
+LPEL=0.010
+QGEN=3.0E8
+KUEL=2.8
+HCOOL=2.0E4
+TBULK=580
+
+ET,1,PLANE55
+KEYOPT,1,3,1
+MP,KXX,1,KUEL
+
+! Rectangle is revolved conceptually about x=0; x is radius, y is axial coordinate
+RECTNG,0,RPEL,0,LPEL
+ESIZE,RPEL/12
+AMESH,ALL
+
+! Volumetric heat source and outer-radius convection boundary
+ALLSEL,ALL
+BFE,ALL,HGEN,,QGEN
+LSEL,S,LOC,X,RPEL
+SFL,ALL,CONV,HCOOL,TBULK
+ALLSEL,ALL
+
+/SOLU
+ANTYPE,STATIC
+SOLVE
+FINISH
+
+/POST1
+SET,LAST
+PLNSOL,TEMP
+*GET,TMAX,PLNSOL,0,MAX
+*VWRITE,TMAX
+(&#x27;Maximum temperature [K] = &#x27;,F12.3)
+FINISH
+</pre></main><footer class="shell">ANSYS APDL 反应堆热工结构每日学习 · 示例用于建模训练和命令理解</footer></body></html>

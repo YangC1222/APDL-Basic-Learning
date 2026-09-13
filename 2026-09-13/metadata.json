@@ -1,0 +1,32 @@
+{
+  "date": "2026-09-13",
+  "lesson": 3,
+  "topic": "燃料芯块体积热源与包壳外表面对流",
+  "difficulty": "入门",
+  "commands": [
+    "/CLEAR",
+    "/PREP7",
+    "ET",
+    "KEYOPT",
+    "MP",
+    "RECTNG",
+    "AGLUE",
+    "ASEL",
+    "AATT",
+    "ESIZE",
+    "AMESH",
+    "ESEL",
+    "BFE",
+    "LSEL",
+    "SFL",
+    "ANTYPE",
+    "SOLVE",
+    "PLNSOL",
+    "*GET",
+    "*CFOPEN",
+    "*VWRITE"
+  ],
+  "validation_status": "static_only",
+  "validation_note": "已完成命令结构、材料选择、热源选择、外壁对流选择及 SI 单位一致性静态检查；未启动 MAPDL。",
+  "prerequisite": "2026-09-12 第2课：一维燃料棒稳态径向导热"
+}

@@ -1,0 +1,118 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07131f">
+<title>第 3 课 · 燃料芯块体积热源与包壳外表面对流</title><style>
+:root{--bg:#06111b;--panel:#0d2130;--paper:#f6faf8;--ink:#102936;--muted:#617681;--cyan:#62e0df;--gold:#ffd166;--line:#dce8e7}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#173f50 0,transparent 35%),var(--bg);color:#e9f7f5;font:16px/1.78 Inter,"PingFang SC","Microsoft YaHei",sans-serif}a{color:inherit}.shell{width:min(1060px,calc(100% - 28px));margin:auto}header{padding:56px 0 36px}.back{color:var(--cyan);text-decoration:none;font-weight:800}.eyebrow{margin-top:30px;color:var(--cyan);font-weight:900;letter-spacing:.13em}h1{font-size:clamp(34px,6vw,62px);line-height:1.12;margin:10px 0}.meta{color:#acc4c9}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}.button{padding:11px 16px;border-radius:999px;background:var(--cyan);color:#06212a;text-decoration:none;font-weight:900}.button.secondary{background:transparent;color:var(--cyan);border:1px solid #2a6170}main{background:var(--paper);color:var(--ink);border-radius:22px 22px 0 0;padding:34px clamp(20px,5vw,64px) 72px}.status{border-left:5px solid var(--gold);background:#fff5d5;padding:12px 16px;border-radius:0 9px 9px 0}h2{font-size:24px;margin:34px 0 10px;color:#0c6870}h3{color:#0c6870}p,li{max-width:850px}code{background:#e4efed;border-radius:5px;padding:2px 5px;color:#0b5f67}.commands{display:flex;gap:7px;flex-wrap:wrap;margin:18px 0 28px}.commands span{background:#dcefed;color:#135d63;border-radius:999px;padding:4px 9px;font:13px Consolas,monospace}blockquote{margin:28px 0;border-left:4px solid #e0a92f;background:#fff7dc;padding:13px 16px}pre{overflow:auto;background:#071621;color:#d8efea;padding:22px;border-radius:14px;font:14px/1.65 Consolas,monospace}footer{color:#8ba5ac;padding:25px 0 42px}@media(max-width:600px){header{padding-top:34px}main{border-radius:16px 16px 0 0}}
+</style></head><body><header class="shell"><a class="back" href="../">← 返回课程首页</a><div class="eyebrow">2026-09-13 · LESSON 3</div><h1>燃料芯块体积热源与包壳外表面对流</h1><p class="meta">难度：入门 · 前置课程：2026-09-12 第2课：一维燃料棒稳态径向导热</p><div class="actions"><a class="button" href="example.inp" download>下载 APDL 示例</a><a class="button secondary" href="README.md">查看 Markdown 讲义</a></div></header><main class="shell"><p class="status"><strong>验证状态：</strong>已静态检查，尚未运行 MAPDL<br>已完成命令结构、材料选择、热源选择、外壁对流选择及 SI 单位一致性静态检查；未启动 MAPDL。</p><div class="commands"><span>/CLEAR</span><span>/PREP7</span><span>ET</span><span>KEYOPT</span><span>MP</span><span>RECTNG</span><span>AGLUE</span><span>ASEL</span><span>AATT</span><span>ESIZE</span><span>AMESH</span><span>ESEL</span><span>BFE</span><span>LSEL</span><span>SFL</span><span>ANTYPE</span><span>SOLVE</span><span>PLNSOL</span><span>*GET</span><span>*CFOPEN</span><span>*VWRITE</span></div><h2>今日目标</h2>
+<p>用 APDL 建立轴对称燃料棒稳态热分析：在 UO₂ 芯块内施加体积发热率，在包壳外表面施加冷却剂对流边界，并提取最高温度。</p>
+<h2>物理问题</h2>
+<p>模型采用 SI 单位制（m、kg、s、K、W、Pa）。燃料半径为 4.10 mm，包壳外半径为 4.75 mm，轴向建模长度为 0.10 m。为突出热源与对流命令，本课把燃料和包壳视为理想结合，不考虑真实气隙热阻；实际燃料棒分析必须在后续课程加入间隙导热或热接触。</p>
+<ul>
+<li>UO₂ 导热率：3.0 W/(m·K)</li>
+<li>包壳导热率：16.0 W/(m·K)</li>
+<li>燃料体积发热率：2.0×10⁸ W/m³</li>
+<li>冷却剂体温：570 K</li>
+<li>对流换热系数：2.5×10⁴ W/(m²·K)</li>
+</ul>
+<h2>关键命令</h2>
+<ul>
+<li><code>ET,1,PLANE55</code>：定义二维稳态热传导单元。</li>
+<li><code>KEYOPT,1,3,1</code>：启用轴对称选项，X 坐标表示半径。</li>
+<li><code>MP,KXX</code>：输入各向同性导热率。</li>
+<li><code>RECTNG</code>：建立燃料和包壳截面区域。</li>
+<li><code>AGLUE,ALL</code>：粘合公共边界，保证理想温度连续。</li>
+<li><code>AATT</code>：给选中区域分配材料与单元类型。</li>
+<li><code>BFE,ALL,HGEN,,qvol</code>：向燃料单元施加体积热源。</li>
+<li><code>SFL,ALL,CONV,h,Tbulk</code>：向包壳外表面线施加对流边界。</li>
+<li><code>*GET,...,MAX,TEMP</code>：提取节点最高温度。</li>
+</ul>
+<h2>完整脚本</h2>
+<p>见同目录 [example.inp](example.inp)。脚本按参数、几何材料、网格、载荷、求解和结果导出分段。</p>
+<h2>预期结果</h2>
+<p>最高温度应位于燃料中心线附近，温度沿半径方向向冷却剂单调下降。芯块内存在体积发热，包壳只传导热量，因此燃料温降通常占主要部分。脚本未经 MAPDL 实际求解，不预报数值结果；运行后应检查 <code>lesson3_results.txt</code> 和温度云图。</p>
+<h2>验证清单</h2>
+<ol>
+<li>**单位检查**：毫米参数均乘 <code>1e-3</code> 转换为米，热源使用 W/m³。</li>
+<li>**能量平衡**：燃料总发热应接近包壳外表面对流带走的热量；可在后续用反力热流求和核查。</li>
+<li>**边界检查**：只在 <code>X=r_clad</code> 的外壁线上施加对流，中心线不施加固定温度。</li>
+<li>**网格检查**：将 <code>esize_r</code> 从 0.20 mm 减为 0.10 mm，比较最高温度变化。</li>
+<li>**物理趋势**：增大 <code>qvol</code> 应升高最高温度；增大 <code>hconv</code> 应降低包壳与冷却剂之间的温差。</li>
+</ol>
+<h2>常见错误</h2>
+<ol>
+<li>将线功率 W/m 直接填入 <code>HGEN</code>：应先按燃料截面积换算为 W/m³。</li>
+<li>对所有单元施加热源：会错误地让包壳自身发热；必须先按材料号选择燃料单元。</li>
+<li>把外壁温度直接固定为冷却剂温度：这会忽略膜温差，应使用 <code>CONV</code> 对流边界。</li>
+</ol>
+<h2>练习题</h2>
+<ol>
+<li>把 <code>qvol</code> 分别改为 1.5×10⁸、2.0×10⁸ 和 2.5×10⁸ W/m³，导出最高温度并检查线性趋势。</li>
+<li>将对流换热系数降低 30%，模拟冷却能力下降；比较包壳外壁温度和燃料最高温度，并说明哪一项增幅更明显。</li>
+</ol>
+<blockquote>本课是命令学习模型。真实反应堆分析需使用经验证的温度相关材料参数、气隙模型、功率分布、冷却剂边界及安全准则。</blockquote><h2>完整 example.inp</h2><pre>! Lesson 3 - axisymmetric fuel rod with volumetric heat and convection
+! SI units: m, kg, s, K, W, Pa
+/CLEAR
+/FILNAME,lesson3_fuel_heat
+/PREP7
+
+! ---- Parameters ----
+r_fuel  = 4.10e-3
+r_clad  = 4.75e-3
+length  = 0.10
+k_fuel  = 3.0
+k_clad  = 16.0
+qvol    = 2.0e8
+hconv   = 2.5e4
+tbulk   = 570.0
+esize_r = 0.20e-3
+
+! ---- Element and materials ----
+ET,1,PLANE55
+KEYOPT,1,3,1
+MP,KXX,1,k_fuel
+MP,KXX,2,k_clad
+
+! ---- Axisymmetric r-z geometry (X=r, Y=z) ----
+RECTNG,0,r_fuel,0,length
+RECTNG,r_fuel,r_clad,0,length
+AGLUE,ALL
+
+! Fuel area: centroid radius below r_fuel
+ASEL,S,LOC,X,0,r_fuel
+AATT,1,,1
+! Cladding area: centroid radius above r_fuel
+ASEL,S,LOC,X,r_fuel,r_clad
+AATT,2,,1
+ALLSEL,ALL
+
+! ---- Mesh ----
+ESIZE,esize_r
+AMESH,ALL
+
+! ---- Fuel volumetric heat generation only ----
+ESEL,S,MAT,,1
+BFE,ALL,HGEN,,qvol
+ALLSEL,ALL
+
+! ---- Coolant convection on outer cladding surface ----
+LSEL,S,LOC,X,r_clad
+SFL,ALL,CONV,hconv,tbulk
+ALLSEL,ALL
+FINISH
+
+! ---- Steady thermal solution ----
+/SOLU
+ANTYPE,STATIC
+SOLVE
+FINISH
+
+! ---- Results ----
+/POST1
+SET,LAST
+PLNSOL,TEMP
+*GET,tmax,NODE,0,MAX,TEMP
+*CFOPEN,lesson3_results,txt
+*VWRITE,tmax
+(&#x27;Maximum nodal temperature [K] = &#x27;,E16.8)
+*CFCLOS
+FINISH
+</pre></main><footer class="shell">ANSYS APDL 反应堆热工结构每日学习 · 示例用于建模训练和命令理解</footer></body></html>
