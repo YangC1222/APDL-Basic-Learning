@@ -1,67 +1,65 @@
-! Lesson 3 - axisymmetric fuel rod with volumetric heat and convection
-! SI units: m, kg, s, K, W, Pa
-/CLEAR
-/FILNAME,lesson3_fuel_heat
-/PREP7
+! 第3课：燃料芯块体积热源与包壳外表面对流
+/CLEAR                          ! 清空当前数据库，避免旧模型残留
+/FILNAME,lesson3_fuel_heat      ! 设置作业名，便于识别求解输出文件
+/PREP7                          ! 进入前处理器
 
-! ---- Parameters ----
-r_fuel  = 4.10e-3
-r_clad  = 4.75e-3
-length  = 0.10
-k_fuel  = 3.0
-k_clad  = 16.0
-qvol    = 2.0e8
-hconv   = 2.5e4
-tbulk   = 570.0
-esize_r = 0.20e-3
+! ----- 参数：统一采用 m、kg、s、K、W、Pa -----
+r_fuel=4.10e-3                  ! UO2 燃料芯块半径，单位 m（4.10 mm）
+r_clad=4.75e-3                  ! 包壳外半径，单位 m（4.75 mm）
+length=0.10                     ! 轴向建模长度，单位 m
+k_fuel=3.0                      ! UO2 导热系数，单位 W/(m·K)
+k_clad=16.0                     ! 包壳导热系数，单位 W/(m·K)
+qvol=2.0e8                      ! 燃料均匀体积发热率，单位 W/m^3
+hconv=2.5e4                     ! 包壳外表面对流换热系数，单位 W/(m^2·K)
+tbulk=570.0                     ! 冷却剂体温，单位 K
+esize_r=0.20e-3                 ! 目标单元尺寸，单位 m（0.20 mm）
 
-! ---- Element and materials ----
-ET,1,PLANE55
-KEYOPT,1,3,1
-MP,KXX,1,k_fuel
-MP,KXX,2,k_clad
+! ----- 单元与材料 -----
+ET,1,PLANE55                    ! 定义 1 号二维热传导单元 PLANE55
+KEYOPT,1,3,1                    ! 启用轴对称选项，X 为半径、Y 为轴向
+MP,KXX,1,k_fuel                 ! 定义材料 1（燃料）的导热系数
+MP,KXX,2,k_clad                 ! 定义材料 2（包壳）的导热系数
 
-! ---- Axisymmetric r-z geometry (X=r, Y=z) ----
-RECTNG,0,r_fuel,0,length
-RECTNG,r_fuel,r_clad,0,length
-AGLUE,ALL
+! ----- 轴对称 r-z 几何 -----
+RECTNG,0,r_fuel,0,length        ! 建立燃料芯块矩形半截面
+RECTNG,r_fuel,r_clad,0,length   ! 建立与燃料相邻的包壳矩形半截面
+AGLUE,ALL                       ! 粘合两面积，使界面温度连续且共享节点
 
-! Fuel area: centroid radius below r_fuel
-ASEL,S,LOC,X,0,r_fuel
-AATT,1,,1
-! Cladding area: centroid radius above r_fuel
-ASEL,S,LOC,X,r_fuel,r_clad
-AATT,2,,1
-ALLSEL,ALL
+! ----- 分配燃料和包壳材料 -----
+ASEL,S,LOC,X,0,r_fuel           ! 选择位于燃料半径范围内的面积
+AATT,1,,1                       ! 为所选燃料面积指定材料 1 和单元类型 1
+ASEL,S,LOC,X,r_fuel,r_clad      ! 选择位于包壳半径范围内的面积
+AATT,2,,1                       ! 为所选包壳面积指定材料 2 和单元类型 1
+ALLSEL,ALL                      ! 恢复选择全部实体
 
-! ---- Mesh ----
-ESIZE,esize_r
-AMESH,ALL
+! ----- 网格 -----
+ESIZE,esize_r                   ! 设置全局目标单元尺寸
+AMESH,ALL                       ! 对燃料和包壳两个面积划分网格
 
-! ---- Fuel volumetric heat generation only ----
-ESEL,S,MAT,,1
-BFE,ALL,HGEN,,qvol
-ALLSEL,ALL
+! ----- 只给燃料施加体积热源 -----
+ESEL,S,MAT,,1                   ! 仅选择材料号为 1 的燃料单元
+BFE,ALL,HGEN,,qvol              ! 向所选燃料单元施加均匀体积热源
+ALLSEL,ALL                      ! 恢复全部实体
 
-! ---- Coolant convection on outer cladding surface ----
-LSEL,S,LOC,X,r_clad
-SFL,ALL,CONV,hconv,tbulk
-ALLSEL,ALL
-FINISH
+! ----- 只给包壳外表面施加冷却剂对流 -----
+LSEL,S,LOC,X,r_clad             ! 选择位于 X=r_clad 的包壳外壁线
+SFL,ALL,CONV,hconv,tbulk        ! 在所选外壁加载对流系数与冷却剂体温
+ALLSEL,ALL                      ! 恢复全部实体
+FINISH                          ! 退出前处理器
 
-! ---- Steady thermal solution ----
-/SOLU
-ANTYPE,STATIC
-SOLVE
-FINISH
+! ----- 稳态热求解 -----
+/SOLU                           ! 进入求解器
+ANTYPE,STATIC                   ! 指定稳态热分析
+SOLVE                           ! 求解燃料—包壳温度场
+FINISH                          ! 退出求解器
 
-! ---- Results ----
-/POST1
-SET,LAST
-PLNSOL,TEMP
-*GET,tmax,NODE,0,MAX,TEMP
-*CFOPEN,lesson3_results,txt
-*VWRITE,tmax
+! ----- 后处理 -----
+/POST1                          ! 进入通用后处理器
+SET,LAST                        ! 读取最后一个已求解结果集
+PLNSOL,TEMP                     ! 绘制节点温度云图
+*GET,tmax,NODE,0,MAX,TEMP       ! 提取全模型节点最高温度到参数 tmax
+*CFOPEN,lesson3_results,txt      ! 打开 lesson3_results.txt 结果文件
+*VWRITE,tmax                    ! 写出最高温度；下一行必须紧邻并保持纯格式描述符
 ('Maximum nodal temperature [K] = ',E16.8)
-*CFCLOS
-FINISH
+*CFCLOS                         ! 关闭结果文件并刷新写入内容
+FINISH                          ! 退出后处理器并结束本课脚本

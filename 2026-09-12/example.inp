@@ -1,64 +1,70 @@
-! 第2课：燃料芯块—气隙—包壳稳态径向导热（SI单位）
-/CLEAR
-/FILNAME,fuel_rod_radial,1
-/PREP7
-! m, kg, s, K, W, Pa
-RPEL=4.00E-3
-RGAP=4.08E-3
-RCLD=4.65E-3
-LSEG=1.00E-2
-QGEN=3.00E8
-KUEL=3.0
-KGAP=0.30
-KCLD=16.0
-HCOOL=2.00E4
-TBULK=580
-ESIZE_R=1.0E-4
+! 第2课：燃料芯块—等效气隙—包壳稳态径向导热
+/CLEAR                          ! 清空当前数据库，避免已有实体和载荷干扰
+/FILNAME,fuel_rod_radial,1      ! 设置作业名并启用日志文件编号 1
+/PREP7                          ! 进入前处理器
 
-ET,1,PLANE55
-KEYOPT,1,3,1
-MP,KXX,1,KUEL
-MP,KXX,2,KGAP
-MP,KXX,3,KCLD
+! ----- 参数：统一采用 m、kg、s、K、W、Pa -----
+RPEL=4.00E-3                    ! 燃料芯块半径，单位 m（4.00 mm）
+RGAP=4.08E-3                    ! 等效气隙外半径，单位 m（4.08 mm）
+RCLD=4.65E-3                    ! 包壳外半径，单位 m（4.65 mm）
+LSEG=1.00E-2                    ! 轴向计算段长度，单位 m（10 mm）
+QGEN=3.00E8                     ! 燃料均匀体积发热率，单位 W/m^3
+KUEL=3.0                        ! UO2 导热系数，单位 W/(m·K)
+KGAP=0.30                       ! 等效气隙导热系数，单位 W/(m·K)
+KCLD=16.0                       ! 包壳导热系数，单位 W/(m·K)
+HCOOL=2.00E4                    ! 包壳外表面对流换热系数，单位 W/(m^2·K)
+TBULK=580                       ! 冷却剂体温，单位 K
+ESIZE_R=1.0E-4                  ! 目标单元尺寸，单位 m（0.10 mm）
 
-RECTNG,0,RPEL,0,LSEG
-RECTNG,RPEL,RGAP,0,LSEG
-RECTNG,RGAP,RCLD,0,LSEG
-AGLUE,ALL
+! ----- 单元与三种材料 -----
+ET,1,PLANE55                    ! 定义 1 号二维热传导单元 PLANE55
+KEYOPT,1,3,1                    ! 设置轴对称选项，X 为半径、Y 为轴向
+MP,KXX,1,KUEL                   ! 定义材料 1（燃料）的导热系数
+MP,KXX,2,KGAP                   ! 定义材料 2（等效气隙）的导热系数
+MP,KXX,3,KCLD                   ! 定义材料 3（包壳）的导热系数
 
-ASEL,S,CENT,X,0,RPEL
-AATT,1,,1
-ASEL,S,CENT,X,RPEL,RGAP
-AATT,2,,1
-ASEL,S,CENT,X,RGAP,RCLD
-AATT,3,,1
-ALLSEL,ALL
-ESIZE,ESIZE_R
-AMESH,ALL
+! ----- 三层相邻轴对称区域 -----
+RECTNG,0,RPEL,0,LSEG            ! 建立燃料芯块截面面积
+RECTNG,RPEL,RGAP,0,LSEG         ! 建立等效气隙截面面积
+RECTNG,RGAP,RCLD,0,LSEG         ! 建立包壳截面面积
+AGLUE,ALL                       ! 粘合相邻面积，使公共边界共享节点
 
-! 体积热源只施加于燃料芯块
-ESEL,S,MAT,,1
-BFE,ALL,HGEN,,QGEN
-ALLSEL,ALL
+! ----- 按面积质心位置分配材料 -----
+ASEL,S,CENT,X,0,RPEL            ! 选择质心位于燃料半径范围内的面积
+AATT,1,,1                       ! 给所选燃料面积指定材料 1 和单元类型 1
+ASEL,S,CENT,X,RPEL,RGAP         ! 选择质心位于气隙半径范围内的面积
+AATT,2,,1                       ! 给所选气隙面积指定材料 2 和单元类型 1
+ASEL,S,CENT,X,RGAP,RCLD         ! 选择质心位于包壳半径范围内的面积
+AATT,3,,1                       ! 给所选包壳面积指定材料 3 和单元类型 1
+ALLSEL,ALL                      ! 恢复选择全部实体
+ESIZE,ESIZE_R                   ! 设置全局目标单元尺寸
+AMESH,ALL                       ! 对三层面积统一划分网格
 
-! 包壳外表面对流
-LSEL,S,LOC,X,RCLD
-SFL,ALL,CONV,HCOOL,TBULK
-ALLSEL,ALL
-FINISH
+! ----- 只给燃料施加体积热源 -----
+ESEL,S,MAT,,1                   ! 仅选择材料号为 1 的燃料单元
+BFE,ALL,HGEN,,QGEN              ! 向所选燃料单元施加体积发热率
+ALLSEL,ALL                      ! 恢复全部实体，防止遗漏后续边界
 
-/SOLU
-ANTYPE,STATIC
-SOLVE
-FINISH
+! ----- 只给包壳外表面施加对流 -----
+LSEL,S,LOC,X,RCLD               ! 选择位于 X=RCLD 的包壳外圆周线
+SFL,ALL,CONV,HCOOL,TBULK        ! 在所选线加载对流边界
+ALLSEL,ALL                      ! 恢复全部实体
+FINISH                          ! 退出前处理器
 
-/POST1
-SET,LAST
-PLNSOL,TEMP
-*GET,TMAX,NODE,0,MAX,TEMP
-*GET,TMIN,NODE,0,MIN,TEMP
-*CFOPEN,radial_results,txt
-*VWRITE,TMAX,TMIN
+! ----- 稳态热求解 -----
+/SOLU                           ! 进入求解器
+ANTYPE,STATIC                   ! 指定稳态热分析
+SOLVE                           ! 求解三层燃料棒的温度场
+FINISH                          ! 退出求解器
+
+! ----- 结果提取与文件输出 -----
+/POST1                          ! 进入通用后处理器
+SET,LAST                        ! 读取最后一个结果集
+PLNSOL,TEMP                     ! 绘制节点温度云图
+*GET,TMAX,NODE,0,MAX,TEMP       ! 提取全模型节点最高温度
+*GET,TMIN,NODE,0,MIN,TEMP       ! 提取全模型节点最低温度
+*CFOPEN,radial_results,txt       ! 打开 radial_results.txt 作为文本输出文件
+*VWRITE,TMAX,TMIN               ! 写出最高和最低温度；下一行必须为格式描述符
 ('TMAX_K=',E16.8,', TMIN_K=',E16.8)
-*CFCLOS
-FINISH
+*CFCLOS                         ! 关闭由 *CFOPEN 打开的结果文件
+FINISH                          ! 退出后处理器并结束本课脚本

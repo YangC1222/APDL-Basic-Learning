@@ -1,42 +1,44 @@
-/CLEAR,START
-/FILNAME,fuel_rod_lesson01
-/PREP7
-! Lesson 01: APDL structure, SI units, and parameters
-! SI units used consistently: m, kg, s, K, W, Pa
+! 第1课：APDL 基本结构、SI 单位制和燃料芯块参数化
+/CLEAR,START                    ! 清空数据库并以默认配置开始，避免旧模型残留
+/FILNAME,fuel_rod_lesson01      ! 设置作业名，输出文件将使用此前缀
+/PREP7                          ! 进入前处理器，开始定义单元、材料和几何
 
-! Geometry: a short UO2 fuel-pellet surrogate, axisymmetric 2-D
-RPEL=0.004
-LPEL=0.010
-QGEN=3.0E8
-KUEL=2.8
-HCOOL=2.0E4
-TBULK=580
+! ----- 参数：统一采用 m、kg、s、K、W、Pa -----
+RPEL=0.004                      ! 燃料芯块半径，单位 m（4.0 mm）
+LPEL=0.010                      ! 轴向模型长度，单位 m（10 mm）
+QGEN=3.0E8                      ! UO2 均匀体积发热率，单位 W/m^3
+KUEL=2.8                        ! UO2 各向同性导热系数，单位 W/(m·K)
+HCOOL=2.0E4                     ! 外表面对流换热系数，单位 W/(m^2·K)
+TBULK=580                       ! 冷却剂体温，单位 K
 
-ET,1,PLANE55
-KEYOPT,1,3,1
-MP,KXX,1,KUEL
+! ----- 单元与材料 -----
+ET,1,PLANE55                    ! 定义 1 号二维热传导单元类型 PLANE55
+KEYOPT,1,3,1                    ! 将 PLANE55 设置为轴对称形式，X 为半径方向
+MP,KXX,1,KUEL                   ! 为材料 1 定义导热系数
 
-! Rectangle is revolved conceptually about x=0; x is radius, y is axial coordinate
-RECTNG,0,RPEL,0,LPEL
-ESIZE,RPEL/12
-AMESH,ALL
+! ----- 二维轴对称半截面：X=r，Y=z -----
+RECTNG,0,RPEL,0,LPEL            ! 建立从轴线到外半径的矩形面积
+ESIZE,RPEL/12                   ! 设置目标单元边长为燃料半径的 1/12
+AMESH,ALL                       ! 对当前全部面积划分二维热单元
 
-! Volumetric heat source and outer-radius convection boundary
-ALLSEL,ALL
-BFE,ALL,HGEN,,QGEN
-LSEL,S,LOC,X,RPEL
-SFL,ALL,CONV,HCOOL,TBULK
-ALLSEL,ALL
+! ----- 热载荷与边界 -----
+ALLSEL,ALL                      ! 恢复选择全部实体，确保热源覆盖燃料区域
+BFE,ALL,HGEN,,QGEN              ! 向全部燃料单元施加均匀体积热源
+LSEL,S,LOC,X,RPEL               ! 仅选择位于 X=RPEL 的燃料外圆周线
+SFL,ALL,CONV,HCOOL,TBULK        ! 在所选外圆周施加对流系数和冷却剂体温
+ALLSEL,ALL                      ! 恢复全部实体，避免选择状态影响后续求解
 
-/SOLU
-ANTYPE,STATIC
-SOLVE
-FINISH
+! ----- 稳态热求解 -----
+/SOLU                           ! 进入求解器
+ANTYPE,STATIC                   ! 指定稳态分析；对热单元表示稳态热传导
+SOLVE                           ! 求解当前温度场
+FINISH                          ! 退出求解器
 
-/POST1
-SET,LAST
-PLNSOL,TEMP
-*GET,TMAX,PLNSOL,0,MAX
-*VWRITE,TMAX
+! ----- 后处理 -----
+/POST1                          ! 进入通用后处理器
+SET,LAST                        ! 读取最后一个已求解结果集
+PLNSOL,TEMP                     ! 绘制节点温度云图
+*GET,TMAX,NODE,0,MAX,TEMP       ! 在全部节点中提取最高温度到参数 TMAX
+*VWRITE,TMAX                    ! 把最高温度写到标准输出；下一行必须是格式描述符
 ('Maximum temperature [K] = ',F12.3)
-FINISH
+FINISH                          ! 退出后处理器并结束本课脚本
