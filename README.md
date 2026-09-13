@@ -10,4 +10,4 @@
 | 2026-09-12 | 2 | [一维燃料棒稳态径向导热：芯块、等效气隙与包壳](2026-09-12/) | 入门 | static_only |
 | 2026-09-11 | 1 | [APDL 基本结构、单位制与参数化：燃料芯块稳态导热起步](2026-09-11/) | 入门 | static_only |
 
-每个日期目录包含 `README.md` 中文讲义、`example.inp` APDL 输入文件、`metadata.json` 课程元数据和网页版 `index.html`。`static_only` 表示已完成命令、选择集和单位一致性静态检查，但尚未在 MAPDL 中求解。
+每个日期目录包含 `README.md` 中文讲义、`model.svg` 模型示意图、`example.inp` APDL 输入文件、`metadata.json` 课程元数据和网页版 `index.html`。`static_only` 表示已完成命令、选择集和单位一致性静态检查，但尚未在 MAPDL 中求解。
