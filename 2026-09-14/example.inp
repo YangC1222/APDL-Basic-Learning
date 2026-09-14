@@ -1,0 +1,72 @@
+! 第4课：UO2、包壳与冷却剂的温度相关材料属性
+/CLEAR                          ! 清空当前数据库，避免旧模型残留
+/FILNAME,lesson4_temp_mat       ! 设置作业名，便于识别求解输出文件
+/PREP7                          ! 进入前处理器
+
+! ----- 参数：统一采用 m、kg、s、K、W、Pa -----
+r_fuel=4.10e-3                  ! UO2 燃料芯块半径，单位 m
+r_clad=4.75e-3                  ! 包壳外半径，单位 m
+length=0.10                     ! 轴向建模长度，单位 m
+qvol=2.0e8                      ! 燃料均匀体积发热率，单位 W/m^3
+coolant_case=600.0              ! 当前冷却剂工况温度，单位 K
+esize_r=0.20e-3                 ! 目标单元尺寸，单位 m
+
+! ----- 冷却剂边界参数表：表坐标为温度 K -----
+*DIM,hcool,TABLE,5,1,1,TEMP     ! 建立 5 个温度点的一维换热系数表
+*TAXIS,hcool(1,1),1,300,600,900,1200,1500 ! 写入换热系数表的温度坐标，单位 K
+hcool(1,1)=1.8e4                ! 300 K 对应换热系数，单位 W/(m^2·K)
+hcool(2,1)=2.5e4                ! 600 K 对应换热系数，单位 W/(m^2·K)
+hcool(3,1)=3.0e4                ! 900 K 对应换热系数，单位 W/(m^2·K)
+hcool(4,1)=3.3e4                ! 1200 K 对应换热系数，单位 W/(m^2·K)
+hcool(5,1)=3.5e4                ! 1500 K 对应换热系数，单位 W/(m^2·K)
+tbulk=coolant_case              ! 将冷却剂体温设置为当前工况温度，单位 K
+hconv=hcool(coolant_case)       ! 从温度表插值得到当前换热系数
+
+! ----- 单元与温度相关材料 -----
+ET,1,PLANE55                    ! 定义二维热传导单元 PLANE55
+KEYOPT,1,3,1                    ! 启用轴对称选项，X 为半径、Y 为轴向
+MPTEMP,1,300,600,900,1200,1500 ! 定义材料属性的五个温度点，单位 K
+MPDATA,KXX,1,1,7.5,5.0,3.8,3.0,2.5 ! 定义材料 1 UO2 的温度相关导热率
+MPDATA,KXX,2,1,13.5,15.0,17.0,19.0,21.0 ! 定义材料 2 包壳的温度相关导热率
+MPWRITE,lesson4_materials,txt   ! 导出材料表到文本文件，便于人工复核
+
+! ----- 轴对称 r-z 几何与材料分区 -----
+RECTNG,0,r_fuel,0,length        ! 建立燃料芯块的轴对称半截面
+RECTNG,r_fuel,r_clad,0,length   ! 建立包壳的轴对称半截面
+AGLUE,ALL                       ! 粘合公共边界，使界面共享节点并保持温度连续
+ASEL,S,LOC,X,0,r_fuel           ! 选择燃料半径范围内的面积
+AATT,1,,1                       ! 为燃料面积指定材料 1 和单元类型 1
+ASEL,S,LOC,X,r_fuel,r_clad      ! 选择包壳半径范围内的面积
+AATT,2,,1                       ! 为包壳面积指定材料 2 和单元类型 1
+ALLSEL,ALL                      ! 恢复选择全部实体
+
+! ----- 网格与热载荷 -----
+ESIZE,esize_r                   ! 设置全局目标单元尺寸
+AMESH,ALL                       ! 对燃料和包壳面积划分网格
+ESEL,S,MAT,,1                   ! 仅选择材料号为 1 的燃料单元
+BFE,ALL,HGEN,,qvol              ! 向燃料单元施加均匀体积热源
+ALLSEL,ALL                      ! 恢复选择全部实体
+LSEL,S,LOC,X,r_clad             ! 选择包壳外表面线
+SFL,ALL,CONV,hconv,tbulk        ! 施加当前冷却剂工况的对流边界
+ALLSEL,ALL                      ! 恢复选择全部实体
+FINISH                          ! 退出前处理器
+
+! ----- 稳态材料非线性热求解 -----
+/SOLU                           ! 进入求解器
+ANTYPE,STATIC                   ! 指定稳态热分析
+NROPT,FULL                      ! 启用完全牛顿迭代处理温度相关材料非线性
+NEQIT,30                        ! 设置每个载荷步最大平衡迭代次数
+SOLVE                           ! 求解温度相关燃料—包壳温度场
+FINISH                          ! 退出求解器
+
+! ----- 后处理与材料区间检查 -----
+/POST1                          ! 进入通用后处理器
+SET,LAST                        ! 读取最后一个已求解结果集
+PLNSOL,TEMP                     ! 绘制节点温度云图
+*GET,tmax,NODE,0,MAX,TEMP       ! 提取全模型最高节点温度，单位 K
+*GET,tmin,NODE,0,MIN,TEMP       ! 提取全模型最低节点温度，单位 K
+*CFOPEN,lesson4_results,txt      ! 打开结果文本文件
+*VWRITE,tmin,tmax,hconv         ! 写出温度范围和换热系数；下一行保持纯格式描述符
+('Tmin [K] = ',E16.8,', Tmax [K] = ',E16.8,', h [W/m2-K] = ',E16.8)
+*CFCLOS                         ! 关闭结果文件并刷新写入内容
+FINISH                          ! 退出后处理器并结束本课脚本

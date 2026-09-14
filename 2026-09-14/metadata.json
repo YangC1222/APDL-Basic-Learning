@@ -1,0 +1,33 @@
+{
+  "date": "2026-09-14",
+  "lesson": 4,
+  "topic": "UO₂、包壳与冷却剂的温度相关材料属性",
+  "difficulty": "入门",
+  "commands": [
+    "/CLEAR",
+    "/PREP7",
+    "MPTEMP",
+    "MPDATA",
+    "*DIM",
+    "*TAXIS",
+    "MPWRITE",
+    "ET",
+    "KEYOPT",
+    "RECTNG",
+    "AGLUE",
+    "AATT",
+    "BFE",
+    "SFL",
+    "ANTYPE",
+    "NROPT",
+    "NEQIT",
+    "SOLVE",
+    "PLNSOL",
+    "*GET",
+    "*CFOPEN",
+    "*VWRITE"
+  ],
+  "validation_status": "static_only",
+  "validation_note": "已完成命令结构、材料温度点对应、选择集、载荷和 SI 单位一致性静态检查；未启动 MAPDL。材料数值仅用于教学。",
+  "prerequisite": "2026-09-13 第3课：燃料芯块体积热源与包壳外表面对流"
+}
