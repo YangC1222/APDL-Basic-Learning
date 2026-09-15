@@ -1,0 +1,112 @@
+! 第5课：瞬态升功率下燃料棒温度响应与时间步控制
+/CLEAR                          ! 清空数据库，避免旧模型、载荷和结果残留
+/FILNAME,lesson5_power_ramp     ! 设置本课作业名，输出文件以 lesson5_power_ramp 开头
+/PREP7                          ! 进入前处理器
+
+! ----- 参数：统一采用 m、kg、s、K、W、Pa -----
+r_fuel=4.10e-3                  ! UO2 燃料芯块半径，单位 m
+r_clad=4.75e-3                  ! 包壳外半径，单位 m
+length=0.10                     ! 轴向建模长度，单位 m
+q_start=5.0e7                   ! 升功率前燃料体积热源，单位 W/m^3
+q_end=2.0e8                     ! 升功率后燃料体积热源，单位 W/m^3
+ramp_time=10.0                  ! 线性升功率持续时间，单位 s
+end_time=60.0                   ! 瞬态总时长，单位 s
+dt=0.50                         ! 基准时间步，单位 s
+tbulk=580.0                     ! 冷却剂体温，单位 K
+hconv=2.5e4                     ! 包壳外壁换热系数，单位 W/(m^2·K)
+esize_r=0.20e-3                 ! 目标单元尺寸，单位 m
+nstep=end_time/dt               ! 计算总时间步数，本例为 120 步
+
+! ----- 热单元与材料热物性 -----
+ET,1,PLANE55                    ! 定义二维热传导单元 PLANE55
+KEYOPT,1,3,1                    ! 将 PLANE55 设置为轴对称，X 为半径、Y 为轴向
+MP,KXX,1,3.5                    ! 材料 1 UO2 导热率，单位 W/(m·K)，仅为教学值
+MP,DENS,1,10970                 ! 材料 1 UO2 密度，单位 kg/m^3
+MP,C,1,300                      ! 材料 1 UO2 比热，单位 J/(kg·K)
+MP,KXX,2,16.0                   ! 材料 2 包壳导热率，单位 W/(m·K)，仅为教学值
+MP,DENS,2,6500                  ! 材料 2 包壳密度，单位 kg/m^3
+MP,C,2,330                      ! 材料 2 包壳比热，单位 J/(kg·K)
+
+! ----- 轴对称燃料—包壳几何 -----
+RECTNG,0,r_fuel,0,length        ! 建立燃料芯块 r-z 半截面
+RECTNG,r_fuel,r_clad,0,length   ! 建立包壳 r-z 半截面
+AGLUE,ALL                       ! 粘合材料界面，使温度与热流连续
+ASEL,S,LOC,X,0,r_fuel           ! 选择燃料半径范围内的面积
+AATT,1,,1                       ! 为燃料面积指定材料 1 和单元类型 1
+ASEL,S,LOC,X,r_fuel,r_clad      ! 选择包壳半径范围内的面积
+AATT,2,,1                       ! 为包壳面积指定材料 2 和单元类型 1
+ALLSEL,ALL                      ! 恢复全部几何选择
+ESIZE,esize_r                   ! 设置全局目标单元尺寸
+AMESH,ALL                       ! 对燃料和包壳面积划分网格
+
+! ----- 保存中心和外壁监测节点编号 -----
+NSEL,S,LOC,X,0                  ! 选择燃料中心线节点
+NSEL,R,LOC,Y,length/2           ! 从中心线节点中保留轴向中面附近节点
+*GET,n_center,NODE,0,NUM,MIN    ! 记录燃料中心监测节点编号
+ALLSEL,ALL                      ! 恢复全部节点与单元
+NSEL,S,LOC,X,r_clad             ! 选择包壳外表面节点
+NSEL,R,LOC,Y,length/2           ! 从外表面节点中保留轴向中面附近节点
+*GET,n_wall,NODE,0,NUM,MIN      ! 记录包壳外壁监测节点编号
+ALLSEL,ALL                      ! 恢复全部节点与单元
+
+! ----- 对流边界与初始小功率载荷 -----
+LSEL,S,LOC,X,r_clad             ! 选择包壳外表面边界线
+SFL,ALL,CONV,hconv,tbulk        ! 施加对流边界，环境温度为 tbulk
+ALLSEL,ALL                      ! 恢复全部实体选择
+ESEL,S,MAT,,1                   ! 仅选择 UO2 燃料单元
+BFE,ALL,HGEN,,q_start           ! 施加升功率前体积热源 q_start
+ALLSEL,ALL                      ! 恢复全部单元选择
+FINISH                          ! 退出前处理器
+
+! ----- 先求初始稳态，作为瞬态初始温度场 -----
+/SOLU                           ! 进入求解器
+ANTYPE,STATIC                   ! 指定稳态热分析
+SOLVE                           ! 求解 q_start 下的初始稳态温度场
+FINISH                          ! 退出稳态求解器
+
+! ----- 重启动为完全瞬态热分析 -----
+/SOLU                           ! 再次进入求解器
+ANTYPE,TRANS                    ! 指定瞬态热分析
+TRNOPT,FULL                     ! 使用完全法时间积分，保留热容量效应
+TIMINT,ON,THERM                 ! 对热自由度启用瞬态积分
+KBC,1                           ! 每个显式给定的 qnow 在当前小时间步内按阶跃保持
+AUTOTS,OFF                      ! 关闭自动时间步，便于教学比较固定时间步敏感性
+DELTIM,dt                       ! 设置固定时间步为 dt
+OUTRES,ERASE                    ! 清除默认结果输出设置，减少不必要结果量
+OUTRES,TEMP,ALL                 ! 保存每个子步的温度结果以绘制完整时程
+
+! ----- 0–10 s 线性升功率，之后保持至 60 s -----
+*DO,istep,1,nstep,1             ! 按固定时间步循环推进整个瞬态
+time_now=istep*dt               ! 计算当前物理时间，单位 s
+*IF,time_now,LE,ramp_time,THEN   ! 判断当前时间是否仍处于线性升功率阶段
+qnow=q_start+(q_end-q_start)*time_now/ramp_time ! 线性插值得到当前体积热源
+*ELSE                           ! 进入升功率结束后的恒功率阶段
+qnow=q_end                      ! 将体积热源保持在最终值 q_end
+*ENDIF                          ! 结束功率阶段判断
+ESEL,S,MAT,,1                   ! 仅选择燃料单元以更新体积热源
+BFE,ALL,HGEN,,qnow              ! 用当前 qnow 覆盖燃料体积热源
+ALLSEL,ALL                      ! 恢复全部单元，避免漏算包壳
+TIME,time_now                   ! 设置本载荷步终止时间
+SOLVE                           ! 求解当前时间步温度场
+*ENDDO                          ! 完成全部 120 个时间步
+FINISH                          ! 退出瞬态求解器
+
+! ----- 时程后处理：燃料中心与包壳外壁 -----
+/POST26                         ! 进入时间历程后处理器
+NUMVAR,20                       ! 为时程变量预留存储空间
+NSOL,2,n_center,TEMP,,T_center  ! 提取燃料中心节点温度时程
+NSOL,3,n_wall,TEMP,,T_wall      ! 提取包壳外壁节点温度时程
+PLVAR,2,3                       ! 绘制中心温度和外壁温度随时间变化
+FINISH                          ! 退出时间历程后处理器
+
+! ----- 最终时刻结果与文本输出 -----
+/POST1                          ! 进入通用后处理器
+SET,LAST                        ! 读取 60 s 最终结果集
+PLNSOL,TEMP                     ! 绘制最终节点温度云图
+*GET,tmax,NODE,0,MAX,TEMP       ! 提取最终时刻全模型最高温度，单位 K
+*GET,tmin,NODE,0,MIN,TEMP       ! 提取最终时刻全模型最低温度，单位 K
+*CFOPEN,lesson5_results,txt      ! 打开文本结果文件
+*VWRITE,tmin,tmax,dt,ramp_time  ! 写出最终温度和时间步信息；下一行保持纯格式描述符
+('Tmin [K] = ',E16.8,', Tmax [K] = ',E16.8,', dt [s] = ',E16.8,', ramp [s] = ',E16.8)
+*CFCLOS                         ! 关闭并刷新结果文件
+FINISH                          ! 结束本课脚本

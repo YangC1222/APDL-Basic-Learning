@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="700" viewBox="0 0 1180 700" role="img" aria-labelledby="title desc">
+  <title id="title">瞬态升功率燃料棒轴对称模型示意图</title>
+  <desc id="desc">左侧为UO2燃料和包壳轴对称截面，右侧为体积热源随时间线性升高并保持的载荷路径。</desc>
+  <defs>
+    <linearGradient id="fuel" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#ffca70"/><stop offset="1" stop-color="#f26b4a"/></linearGradient>
+    <linearGradient id="clad" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#a9c9d8"/><stop offset="1" stop-color="#517a91"/></linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#2b667c"/></marker>
+  </defs>
+  <rect width="1180" height="700" rx="26" fill="#f2f7f9"/>
+  <text x="52" y="62" font-family="Microsoft YaHei, sans-serif" font-size="30" font-weight="700" fill="#173747">第5课｜瞬态升功率下燃料棒温度响应</text>
+  <text x="52" y="96" font-family="Microsoft YaHei, sans-serif" font-size="16" fill="#527081">轴对称 r-z 模型，示意图非比例绘制｜SI 单位制</text>
+  <g transform="translate(65 140)">
+    <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="22" font-weight="700" fill="#173747">模型与边界</text>
+    <rect x="155" y="42" width="250" height="450" rx="8" fill="url(#fuel)" stroke="#9e412f" stroke-width="2"/>
+    <rect x="405" y="42" width="42" height="450" fill="url(#clad)" stroke="#31596c" stroke-width="2"/>
+    <line x1="155" y1="42" x2="155" y2="492" stroke="#173747" stroke-width="3"/>
+    <text x="255" y="255" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="22" font-weight="700" fill="#612d22">UO₂ 燃料</text>
+    <text x="255" y="286" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="17" fill="#612d22">q'''(t)，ρ，c，k</text>
+    <text x="426" y="260" text-anchor="middle" transform="rotate(-90 426 260)" font-family="Microsoft YaHei, sans-serif" font-size="18" font-weight="700" fill="#173747">包壳</text>
+    <line x1="447" y1="90" x2="520" y2="90" stroke="#2b667c" stroke-width="3" marker-end="url(#arrow)"/>
+    <line x1="447" y1="180" x2="520" y2="180" stroke="#2b667c" stroke-width="3" marker-end="url(#arrow)"/>
+    <line x1="447" y1="270" x2="520" y2="270" stroke="#2b667c" stroke-width="3" marker-end="url(#arrow)"/>
+    <line x1="447" y1="360" x2="520" y2="360" stroke="#2b667c" stroke-width="3" marker-end="url(#arrow)"/>
+    <line x1="447" y1="450" x2="520" y2="450" stroke="#2b667c" stroke-width="3" marker-end="url(#arrow)"/>
+    <text x="535" y="238" font-family="Microsoft YaHei, sans-serif" font-size="17" fill="#24566b">h = 2.5×10⁴ W/(m²·K)</text>
+    <text x="535" y="266" font-family="Microsoft YaHei, sans-serif" font-size="17" fill="#24566b">T∞ = 580 K</text>
+    <circle cx="158" cy="267" r="7" fill="#7b1f13"/><text x="20" y="275" font-family="Microsoft YaHei, sans-serif" font-size="16" fill="#173747">中心监测点 T_center</text>
+    <circle cx="445" cy="267" r="7" fill="#173747"/><text x="462" y="300" font-family="Microsoft YaHei, sans-serif" font-size="16" fill="#173747">外壁监测点 T_wall</text>
+    <line x1="155" y1="525" x2="405" y2="525" stroke="#173747" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+    <text x="280" y="552" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="16" fill="#173747">r_fuel = 4.10 mm</text>
+    <line x1="405" y1="570" x2="447" y2="570" stroke="#173747" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+    <text x="426" y="598" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="15" fill="#173747">0.65 mm</text>
+    <line x1="120" y1="492" x2="120" y2="42" stroke="#173747" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+    <text x="92" y="270" text-anchor="middle" transform="rotate(-90 92 270)" font-family="Microsoft YaHei, sans-serif" font-size="16" fill="#173747">L = 0.10 m</text>
+    <line x1="145" y1="510" x2="220" y2="510" stroke="#2b667c" stroke-width="2" marker-end="url(#arrow)"/><text x="226" y="516" font-family="Microsoft YaHei, sans-serif" font-size="16" fill="#2b667c">r</text>
+    <line x1="145" y1="510" x2="145" y2="435" stroke="#2b667c" stroke-width="2" marker-end="url(#arrow)"/><text x="133" y="424" font-family="Microsoft YaHei, sans-serif" font-size="16" fill="#2b667c">z</text>
+  </g>
+  <g transform="translate(710 145)">
+    <text x="0" y="0" font-family="Microsoft YaHei, sans-serif" font-size="22" font-weight="700" fill="#173747">体积热源载荷路径</text>
+    <line x1="58" y1="430" x2="410" y2="430" stroke="#173747" stroke-width="2" marker-end="url(#arrow)"/>
+    <line x1="58" y1="430" x2="58" y2="75" stroke="#173747" stroke-width="2" marker-end="url(#arrow)"/>
+    <polyline points="58,360 115,360 175,135 395,135" fill="none" stroke="#e65d3f" stroke-width="7" stroke-linejoin="round"/>
+    <line x1="175" y1="135" x2="175" y2="430" stroke="#91aab5" stroke-dasharray="8 7"/>
+    <text x="175" y="458" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="16" fill="#173747">10 s</text>
+    <text x="395" y="458" text-anchor="middle" font-family="Microsoft YaHei, sans-serif" font-size="16" fill="#173747">60 s</text>
+    <text x="44" y="367" text-anchor="end" font-family="Microsoft YaHei, sans-serif" font-size="15" fill="#173747">5×10⁷</text>
+    <text x="44" y="142" text-anchor="end" font-family="Microsoft YaHei, sans-serif" font-size="15" fill="#173747">2×10⁸</text>
+    <text x="230" y="495" font-family="Microsoft YaHei, sans-serif" font-size="17" fill="#173747">时间 t / s</text>
+    <text x="-245" y="4" transform="rotate(-90)" font-family="Microsoft YaHei, sans-serif" font-size="17" fill="#173747">q''' / W·m⁻³</text>
+    <rect x="45" y="520" width="380" height="90" rx="12" fill="#dcecf2"/>
+    <text x="65" y="550" font-family="Microsoft YaHei, sans-serif" font-size="16" fill="#173747">固定时间步 dt = 0.50 s</text>
+    <text x="65" y="577" font-family="Microsoft YaHei, sans-serif" font-size="16" fill="#173747">先求低功率稳态，再进行完全瞬态热分析</text>
+    <text x="65" y="603" font-family="Microsoft YaHei, sans-serif" font-size="15" fill="#527081">练习：比较 dt = 1.0 / 0.50 / 0.25 s</text>
+  </g>
+</svg>
