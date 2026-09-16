@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="600" viewBox="0 0 1120 600" role="img" aria-labelledby="title desc">
+  <title id="title">第6课燃料棒温度场向结构场单向传递示意</title>
+  <desc id="desc">左侧是燃料与包壳二维轴对称截面，右侧是 PLANE55 热求解、ETCHG 转换、LDREAD 温度传递和 PLANE182 结构求解流程。</desc>
+  <defs>
+    <linearGradient id="fuel" x2="1" y2="0"><stop stop-color="#f7b064"/><stop offset="1" stop-color="#e67f46"/></linearGradient>
+    <linearGradient id="clad" x2="1" y2="0"><stop stop-color="#9dd5e5"/><stop offset="1" stop-color="#4b93ae"/></linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#47748b"/></marker>
+    <style>
+      text{font-family:'Microsoft YaHei','Noto Sans CJK SC',sans-serif;fill:#173144}
+      .head{font-size:27px;font-weight:700}.sub{font-size:16px;fill:#546f7f}.lab{font-size:17px;font-weight:600}.sm{font-size:14px}.step{font-size:17px;font-weight:700}
+    </style>
+  </defs>
+  <rect width="1120" height="600" rx="28" fill="#f3f8fa"/>
+  <text x="48" y="55" class="head">第 6 课 · 燃料棒温度场 → 结构场</text>
+  <text x="48" y="82" class="sub">二维轴对称 · SI 单位 · 教学简化模型（非比例绘制）</text>
+  <rect x="38" y="112" width="498" height="430" rx="20" fill="#fff" stroke="#d7e5ea"/>
+  <text x="65" y="147" class="lab">r-z 截面与载荷</text>
+  <line x1="119" y1="453" x2="119" y2="192" stroke="#47748b" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="119" y1="453" x2="447" y2="453" stroke="#47748b" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="96" y="193" class="sm">z</text><text x="448" y="474" class="sm">r</text>
+  <rect x="119" y="190" width="222" height="260" fill="url(#fuel)" stroke="#d67235" stroke-width="2"/>
+  <rect x="341" y="190" width="48" height="260" fill="url(#clad)" stroke="#3a819d" stroke-width="2"/>
+  <line x1="119" y1="190" x2="119" y2="450" stroke="#173144" stroke-width="3" stroke-dasharray="8 6"/>
+  <text x="183" y="276" class="lab">UO₂ 燃料</text>
+  <text x="176" y="302" class="sm">q‴ = 2.0×10⁸ W/m³</text>
+  <text x="403" y="273" class="sm">包壳</text>
+  <text x="403" y="295" class="sm">外壁对流</text>
+  <text x="403" y="317" class="sm">h = 2.5×10⁴</text>
+  <text x="403" y="339" class="sm">T∞ = 580 K</text>
+  <path d="M393 270h53" stroke="#47748b" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M393 325h53" stroke="#47748b" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="123" y="481" class="sm">r = 0</text><text x="279" y="481" class="sm">4.10 mm</text><text x="372" y="501" class="sm">4.75 mm</text>
+  <text x="66" y="523" class="sm">轴线 UX = 0；基准节点 UY = 0；轴向长 0.10 m</text>
+  <rect x="557" y="112" width="525" height="430" rx="20" fill="#fff" stroke="#d7e5ea"/>
+  <text x="585" y="147" class="lab">一向传递流程</text>
+  <rect x="585" y="174" width="470" height="72" rx="13" fill="#fff0e4" stroke="#edbd97"/>
+  <text x="603" y="204" class="step">① PLANE55 热分析</text>
+  <text x="603" y="228" class="sm">求稳态温度场 → lesson6_fuelrod.rth</text>
+  <path d="M820 248v32" stroke="#47748b" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="585" y="284" width="470" height="72" rx="13" fill="#e9f2f7" stroke="#a9c9d9"/>
+  <text x="603" y="314" class="step">② ETCHG,TTS</text>
+  <text x="603" y="338" class="sm">PLANE55 → PLANE182，网格/节点保持</text>
+  <path d="M820 358v32" stroke="#47748b" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="585" y="394" width="470" height="72" rx="13" fill="#e7f4f2" stroke="#9bcfc7"/>
+  <text x="603" y="424" class="step">③ LDREAD,TEMP → 结构求解</text>
+  <text x="603" y="448" class="sm">TREF = 580 K；检查位移和等效应力</text>
+  <text x="584" y="508" class="sm">完美粘合、无间隙、线弹性；仅用于命令学习。</text>
+</svg>

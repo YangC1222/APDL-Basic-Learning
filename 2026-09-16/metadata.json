@@ -1,0 +1,32 @@
+{
+  "date": "2026-09-16",
+  "lesson": 6,
+  "topic": "燃料温度场向包壳结构场传递",
+  "difficulty": "入门进阶",
+  "commands": [
+    "/CLEAR",
+    "/PREP7",
+    "PLANE55",
+    "KEYOPT",
+    "MP",
+    "RECTNG",
+    "AGLUE",
+    "AATT",
+    "SFL",
+    "BFE",
+    "SOLVE",
+    "SFLDELE",
+    "BFEDELE",
+    "ETCHG",
+    "PLANE182",
+    "D",
+    "TREF",
+    "LDREAD",
+    "PLNSOL",
+    "*GET",
+    "*VWRITE"
+  ],
+  "validation_status": "static_only",
+  "validation_note": "依据 Ansys 2026 R1 验证例 VM32 和官方 ETCHG、LDREAD、PLANE55/182 命令说明核对单元转换、温度读取与轴对称选项；已检查每条可执行命令行尾注释和 SI 单位。未运行 MAPDL，故无计算结果数值。",
+  "prerequisite": "2026-09-15 第5课：瞬态升功率下的燃料棒温度响应与时间步控制"
+}

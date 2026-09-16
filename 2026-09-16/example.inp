@@ -1,0 +1,81 @@
+! 第6课：燃料温度场向包壳结构场单向传递；统一单位 m、kg、s、K、W、Pa
+/CLEAR                          ! 清空当前数据库，避免沿用旧模型
+/FILNAME,lesson6_fuelrod        ! 设置热结果文件 lesson6_fuelrod.rth 与结构结果文件 lesson6_fuelrod.rst
+/PREP7                          ! 进入前处理器
+
+! ----- 教学参数：无间隙、完美粘合的 UO2—包壳简化模型 -----
+r_fuel=4.10e-3                  ! 燃料半径，单位 m
+r_clad=4.75e-3                  ! 包壳外半径，单位 m
+rod_length=0.10                 ! 轴向截面长度，单位 m
+qvol=2.0e8                      ! 燃料体积热源，单位 W/m^3
+tbulk=580.0                     ! 冷却剂体温，单位 K
+hconv=2.5e4                     ! 包壳外壁换热系数，单位 W/(m^2·K)
+esize_r=0.15e-3                 ! 全局目标单元边长，单位 m
+
+! ----- 热分析：PLANE55 轴对称导热 -----
+ET,1,PLANE55                    ! 创建四节点二维热单元
+KEYOPT,1,3,1                    ! 设为轴对称，X 为半径、Y 为轴向
+MP,KXX,1,3.5                    ! 材料 1 UO2 教学导热率，单位 W/(m·K)
+MP,KXX,2,16.0                   ! 材料 2 包壳教学导热率，单位 W/(m·K)
+RECTNG,0,r_fuel,0,rod_length    ! 创建 UO2 的 r-z 半截面
+RECTNG,r_fuel,r_clad,0,rod_length ! 创建包壳的 r-z 半截面
+AGLUE,ALL                       ! 粘合共用界面，假设温度与位移连续
+ASEL,S,LOC,X,0,r_fuel           ! 选择面积形心位于燃料径向范围的区域
+AATT,1,,1                       ! 将燃料区域指定为材料 1、单元类型 1
+ASEL,S,LOC,X,r_fuel,r_clad      ! 选择面积形心位于包壳径向范围的区域
+AATT,2,,1                       ! 将包壳区域指定为材料 2、单元类型 1
+ALLSEL,ALL                      ! 恢复全部几何实体
+ESIZE,esize_r                   ! 设定全局网格尺寸
+AMESH,ALL                       ! 对两个面积划分共节点网格
+LSEL,S,LOC,X,r_clad             ! 仅选择包壳外半径处的边界线
+SFL,ALL,CONV,hconv,tbulk        ! 外壁施加对流边界，h 单位 W/(m^2·K)
+ALLSEL,ALL                      ! 恢复全部线、节点和单元
+ESEL,S,MAT,,1                   ! 仅选择燃料材料的单元
+BFE,ALL,HGEN,,qvol              ! 向燃料单元施加体积热源，单位 W/m^3
+ALLSEL,ALL                      ! 恢复全部单元参与求解
+FINISH                          ! 退出热分析前处理
+
+/SOLU                           ! 进入热求解器
+ANTYPE,STATIC                   ! 稳态热传导分析
+SOLVE                           ! 生成可供 LDREAD 读取的 .rth 温度场
+FINISH                          ! 退出热求解器
+
+! ----- 单向传递：保留节点与网格，将热单元切换为结构单元 -----
+/PREP7                          ! 返回前处理器转换单元类型
+ALLSEL,ALL                      ! 确保删除载荷和转换针对完整模型
+SFLDELE,ALL,CONV               ! 清除热对流边界及相应有限元载荷
+BFEDELE,ALL,HGEN               ! 清除热体积热源，避免遗留载荷干扰
+ETCHG,TTS                       ! 将 PLANE55 转换为 PLANE182，节点编号不变
+KEYOPT,1,3,1                    ! ETCHG 重置选项后，重新设置结构轴对称行为
+MP,EX,1,2.00e11                 ! UO2 教学弹性模量，单位 Pa
+MP,PRXY,1,0.30                  ! UO2 教学泊松比，无量纲
+MP,ALPX,1,1.00e-5               ! UO2 教学线膨胀系数，单位 1/K
+MP,EX,2,1.00e11                 ! 包壳教学弹性模量，单位 Pa
+MP,PRXY,2,0.33                  ! 包壳教学泊松比，无量纲
+MP,ALPX,2,5.50e-6               ! 包壳教学线膨胀系数，单位 1/K
+NSEL,S,LOC,X,0                  ! 选择 r=0 的全部轴线节点
+D,ALL,UX,0                      ! 轴线径向位移为零，保持轴对称运动学
+NSEL,R,LOC,Y,0                  ! 从轴线节点中保留 z=0 的基准节点
+*GET,n_anchor,NODE,0,NUM,MIN    ! 取得一个基准节点编号以消除轴向刚体平移
+D,n_anchor,UY,0                 ! 仅固定该节点的轴向位移，不钳制整端面
+ALLSEL,ALL                      ! 恢复完整网格以读取所有节点温度
+FINISH                          ! 退出结构分析前处理
+
+/SOLU                           ! 进入结构求解器
+ANTYPE,STATIC                   ! 指定线弹性静力结构分析
+TREF,tbulk                      ! 设定无热应变参考温度为冷却剂体温，单位 K
+LDREAD,TEMP,LAST,,,,lesson6_fuelrod,rth ! 从热结果末步读取全部节点温度作为结构体温载荷
+SOLVE                           ! 计算完美粘合假设下的热变形和热应力
+FINISH                          ! 退出结构求解器
+
+/POST1                          ! 进入通用后处理器
+SET,LAST                        ! 读取最后一个结构结果集
+PLNSOL,U,SUM                    ! 绘制总位移云图，结果单位 m
+PLNSOL,S,EQV                    ! 绘制等效应力云图，结果单位 Pa
+*GET,smax,NODE,0,MAX,S,EQV      ! 提取全模型节点等效应力最大值，单位 Pa
+*GET,umax,NODE,0,MAX,U,SUM      ! 提取全模型节点总位移最大值，单位 m
+*CFOPEN,lesson6_results,txt      ! 打开教学结果文本文件
+*VWRITE,smax,umax               ! 写出应力和位移；下一行是必须保持纯净的 FORTRAN 格式行
+('Smax [Pa] = ',E16.8,', Umax [m] = ',E16.8)
+*CFCLOS                         ! 关闭并刷新结果文件
+FINISH                          ! 结束第 6 课脚本

@@ -1,0 +1,132 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07131f">
+<title>第 6 课 · 燃料温度场向包壳结构场传递</title><style>
+:root{--bg:#06111b;--panel:#0d2130;--paper:#f6faf8;--ink:#102936;--muted:#617681;--cyan:#62e0df;--gold:#ffd166;--line:#dce8e7}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#173f50 0,transparent 35%),var(--bg);color:#e9f7f5;font:16px/1.78 Inter,"PingFang SC","Microsoft YaHei",sans-serif}a{color:inherit}.shell{width:min(1060px,calc(100% - 28px));margin:auto}header{padding:56px 0 36px}.back{color:var(--cyan);text-decoration:none;font-weight:800}.eyebrow{margin-top:30px;color:var(--cyan);font-weight:900;letter-spacing:.13em}h1{font-size:clamp(34px,6vw,62px);line-height:1.12;margin:10px 0}.meta{color:#acc4c9}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}.button{padding:11px 16px;border-radius:999px;background:var(--cyan);color:#06212a;text-decoration:none;font-weight:900}.button.secondary{background:transparent;color:var(--cyan);border:1px solid #2a6170}main{background:var(--paper);color:var(--ink);border-radius:22px 22px 0 0;padding:34px clamp(20px,5vw,64px) 72px}.status{border-left:5px solid var(--gold);background:#fff5d5;padding:12px 16px;border-radius:0 9px 9px 0}figure{margin:28px 0 36px}figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:16px;background:#f4faf9}figcaption{color:var(--muted);font-size:13px;margin-top:8px}h2{font-size:24px;margin:34px 0 10px;color:#0c6870}h3{color:#0c6870}p,li{max-width:850px}code{background:#e4efed;border-radius:5px;padding:2px 5px;color:#0b5f67}.commands{display:flex;gap:7px;flex-wrap:wrap;margin:18px 0 28px}.commands span{background:#dcefed;color:#135d63;border-radius:999px;padding:4px 9px;font:13px Consolas,monospace}blockquote{margin:28px 0;border-left:4px solid #e0a92f;background:#fff7dc;padding:13px 16px}pre{overflow:auto;background:#071621;color:#d8efea;padding:18px 0;border-radius:14px;font:14px/1.65 Consolas,"Microsoft YaHei",monospace}.code-line{display:block;min-width:max-content;padding:0 20px}.code-line:hover{background:#102838}.code-line i{display:inline-block;width:36px;margin-right:16px;color:#52707c;font-style:normal;text-align:right;user-select:none}.code-line .code{color:#d8efea}.code-line .comment{color:#84d7a0}footer{color:#8ba5ac;padding:25px 0 42px}@media(max-width:600px){header{padding-top:34px}main{border-radius:16px 16px 0 0}}
+</style></head><body><header class="shell"><a class="back" href="../">← 返回课程首页</a><div class="eyebrow">2026-09-16 · LESSON 6</div><h1>燃料温度场向包壳结构场传递</h1><p class="meta">难度：入门进阶 · 前置课程：2026-09-15 第5课：瞬态升功率下的燃料棒温度响应与时间步控制</p><div class="actions"><a class="button" href="example.inp" download>下载 APDL 示例</a><a class="button secondary" href="model.svg" download>下载模型图</a><a class="button secondary" href="README.md">查看 Markdown 讲义</a></div></header><main class="shell"><p class="status"><strong>验证状态：</strong>已静态检查，尚未运行 MAPDL<br>依据 Ansys 2026 R1 验证例 VM32 和官方 ETCHG、LDREAD、PLANE55/182 命令说明核对单元转换、温度读取与轴对称选项；已检查每条可执行命令行尾注释和 SI 单位。未运行 MAPDL，故无计算结果数值。</p><figure><img src="model.svg" alt="燃料温度场向包壳结构场传递模型示意图"><figcaption>几何、材料区域、载荷和边界条件与本课 example.inp 对应；示意尺寸以图中标注为准。</figcaption></figure><div class="commands"><span>/CLEAR</span><span>/PREP7</span><span>PLANE55</span><span>KEYOPT</span><span>MP</span><span>RECTNG</span><span>AGLUE</span><span>AATT</span><span>SFL</span><span>BFE</span><span>SOLVE</span><span>SFLDELE</span><span>BFEDELE</span><span>ETCHG</span><span>PLANE182</span><span>D</span><span>TREF</span><span>LDREAD</span><span>PLNSOL</span><span>*GET</span><span>*VWRITE</span></div><h2>今日目标</h2>
+<p>先求 UO₂ 燃料与包壳的稳态温度场，再保持同一网格，将热单元改为结构单元，把 <code>.rth</code> 中的温度作为热膨胀载荷，查看位移和等效应力。</p>
+<h2>物理问题</h2>
+<p>统一采用 SI 单位（m、kg、s、K、W、Pa）。模型为长 0.10 m 的二维轴对称 <code>r-z</code> 截面：燃料半径 4.10 mm，包壳外半径 4.75 mm。燃料体积热源为 <code>2.0×10⁸ W/m³</code>；包壳外表面对 580 K 冷却剂对流，教学换热系数为 <code>2.5×10⁴ W/(m²·K)</code>。温度参考态也设为 580 K。</p>
+<p>这是**无燃料—包壳间隙的完美粘合教学模型**。共节点界面使温度、径向位移连续；它会夸大实际未接触燃料棒的力学耦合，不应把所得应力直接当作工程评价值。燃料热膨胀、包壳温度梯度及材料膨胀系数差异共同决定结构响应。暂不考虑间隙导热、接触、内压、燃耗、辐照、塑性和蠕变。</p>
+<h2>关键命令</h2>
+<ul>
+<li><code>ET,1,PLANE55</code>、<code>KEYOPT,1,3,1</code>：定义轴对称热单元。</li>
+<li><code>BFE,ALL,HGEN,,qvol</code>：仅向燃料单元施加体积热源。</li>
+<li><code>SFL,ALL,CONV,hconv,tbulk</code>：给包壳外壁施加对流边界。</li>
+<li><code>ETCHG,TTS</code>：保留网格，将 <code>PLANE55</code> 切换成结构 <code>PLANE182</code>；随后必须重新设置轴对称 <code>KEYOPT</code>。</li>
+<li><code>SFLDELE</code>、<code>BFEDELE</code>：切换物理场前清理热边界与热源。</li>
+<li><code>TREF,tbulk</code>：设定热应变的零参考温度。</li>
+<li><code>LDREAD,TEMP,LAST,,,,lesson6_fuelrod,rth</code>：从末个热结果集读取温度，以节点体载荷传入结构分析。</li>
+<li><code>D</code>：轴线约束径向位移，仅用一个基准点消除轴向刚体平移。</li>
+<li><code>PLNSOL,U,SUM</code> 与 <code>PLNSOL,S,EQV</code>：查看位移和等效应力。</li>
+</ul>
+<h2>分析流程</h2>
+<ol>
+<li>两块粘合面积共用节点，以 <code>PLANE55</code> 建立轴对称热模型，求解稳态温度并生成 <code>.rth</code>。</li>
+<li>清除热载荷，使用 <code>ETCHG,TTS</code> 转换为 <code>PLANE182</code>，补充两种材料的 <code>EX</code>、<code>PRXY</code>、<code>ALPX</code>，重新设置轴对称选项。</li>
+<li>约束轴线 <code>UX=0</code> 和轴线上一个节点 <code>UY=0</code>；<code>LDREAD</code> 导入节点温度，求解静态热弹性问题。</li>
+<li>核对温度、约束、位移和应力，再开展网格和参数敏感性比较。</li>
+</ol>
+<h2>完整脚本</h2>
+<p>见同目录的 [example.inp](example.inp)。每条可执行 APDL 命令和参数赋值都有中文行尾注释；<code>*VWRITE</code> 后的格式描述符遵循 APDL 语法保持为纯格式行。</p>
+<h2>预期结果</h2>
+<p>燃料中心温度通常高于包壳外壁。若热膨胀系数不同，粘合界面附近可能出现明显热应力；应力分布取决于约束和材料参数。不能根据教学参数推断真实燃料棒的峰值应力，也不能把节点最大值直接用作收敛判据。本课没有运行 MAPDL，故不填写计算数值。</p>
+<h2>验证清单</h2>
+<ol>
+<li>**热平衡**：估算发热量 <code>qvol·πr_fuel²·rod_length</code>，与包壳外表面对流排热量比较；若差异明显，检查面积选择和边界。</li>
+<li>**网格与界面**：确认燃料与包壳有共用节点，并将 <code>esize_r</code> 缩小一半比较外壁温度、包壳中部应力。</li>
+<li>**温度映射**：结构阶段确认 <code>LDREAD</code> 读取的是 <code>.rth</code> 最后热结果集，节点数量和编号未改变，且两种材料都接收温度。</li>
+<li>**约束与单位**：只限制必要刚体位移；核对 K、Pa、W/m³、W/(m²·K)，以及 <code>TREF=580 K</code>。</li>
+<li>**物理边界**：将 UO₂ 与包壳膨胀系数分别改变 ±20%，观察位移和界面应力的方向与灵敏度。</li>
+</ol>
+<h2>常见错误</h2>
+<ol>
+<li><code>ETCHG,TTS</code> 后忘记重新指定 <code>KEYOPT,1,3,1</code>：结构场可能按平面应力分析，造成错误的环向应力。</li>
+<li>热网格和结构网格不同却直接使用 <code>LDREAD</code>：该命令按原节点映射；应保持同网格或使用经过验证的其他映射方法。</li>
+<li>把整个端面 <code>UY=0</code> 当作去刚体约束：端面轴向膨胀被额外钳制，会抬高热应力。</li>
+</ol>
+<h2>练习题</h2>
+<ol>
+<li>将 <code>qvol</code> 分别设为 <code>1.0×10⁸</code>、<code>2.0×10⁸</code> 和 <code>3.0×10⁸ W/m³</code>，记录燃料中心温度、包壳中部等效应力与最大径向位移，并判断是否近似线性。</li>
+<li>在下一阶段加入燃料—包壳间隙及接触，比较“完美粘合”和“间隙尚未闭合”两种假设下的包壳应力，说明何时应转为非线性接触分析。</li>
+</ol>
+<p>**核对依据**：[Ansys 2026 R1 的 VM32 热—结构验证算例](https://ansyshelp.ansys.com/public/Views/Secured/corp/v261/en/ans_vm/Hlp_V_VM32TXT.html)、[ETCHG 命令](https://ansyshelp.ansys.com/public/Views/Secured/corp/v252/en/ans_cmd/Hlp_C_ETCHG.html)、[LDREAD 命令](https://ansyshelp.ansys.com/public/Views/Secured/corp/v252/en/ans_cmd/Hlp_C_LDREAD.html)。本课只完成官方命令与结构的静态核对，具体求解需在有许可的 MAPDL 环境验证。</p><h2>完整 example.inp（逐行中文注释）</h2><pre><span class="code-line"><i>01</i><span class="code"></span><span class="comment">! 第6课：燃料温度场向包壳结构场单向传递；统一单位 m、kg、s、K、W、Pa</span></span>
+<span class="code-line"><i>02</i><span class="code">/CLEAR                          </span><span class="comment">! 清空当前数据库，避免沿用旧模型</span></span>
+<span class="code-line"><i>03</i><span class="code">/FILNAME,lesson6_fuelrod        </span><span class="comment">! 设置热结果文件 lesson6_fuelrod.rth 与结构结果文件 lesson6_fuelrod.rst</span></span>
+<span class="code-line"><i>04</i><span class="code">/PREP7                          </span><span class="comment">! 进入前处理器</span></span>
+<span class="code-line"><i>05</i><span class="code"></span></span>
+<span class="code-line"><i>06</i><span class="code"></span><span class="comment">! ----- 教学参数：无间隙、完美粘合的 UO2—包壳简化模型 -----</span></span>
+<span class="code-line"><i>07</i><span class="code">r_fuel=4.10e-3                  </span><span class="comment">! 燃料半径，单位 m</span></span>
+<span class="code-line"><i>08</i><span class="code">r_clad=4.75e-3                  </span><span class="comment">! 包壳外半径，单位 m</span></span>
+<span class="code-line"><i>09</i><span class="code">rod_length=0.10                 </span><span class="comment">! 轴向截面长度，单位 m</span></span>
+<span class="code-line"><i>10</i><span class="code">qvol=2.0e8                      </span><span class="comment">! 燃料体积热源，单位 W/m^3</span></span>
+<span class="code-line"><i>11</i><span class="code">tbulk=580.0                     </span><span class="comment">! 冷却剂体温，单位 K</span></span>
+<span class="code-line"><i>12</i><span class="code">hconv=2.5e4                     </span><span class="comment">! 包壳外壁换热系数，单位 W/(m^2·K)</span></span>
+<span class="code-line"><i>13</i><span class="code">esize_r=0.15e-3                 </span><span class="comment">! 全局目标单元边长，单位 m</span></span>
+<span class="code-line"><i>14</i><span class="code"></span></span>
+<span class="code-line"><i>15</i><span class="code"></span><span class="comment">! ----- 热分析：PLANE55 轴对称导热 -----</span></span>
+<span class="code-line"><i>16</i><span class="code">ET,1,PLANE55                    </span><span class="comment">! 创建四节点二维热单元</span></span>
+<span class="code-line"><i>17</i><span class="code">KEYOPT,1,3,1                    </span><span class="comment">! 设为轴对称，X 为半径、Y 为轴向</span></span>
+<span class="code-line"><i>18</i><span class="code">MP,KXX,1,3.5                    </span><span class="comment">! 材料 1 UO2 教学导热率，单位 W/(m·K)</span></span>
+<span class="code-line"><i>19</i><span class="code">MP,KXX,2,16.0                   </span><span class="comment">! 材料 2 包壳教学导热率，单位 W/(m·K)</span></span>
+<span class="code-line"><i>20</i><span class="code">RECTNG,0,r_fuel,0,rod_length    </span><span class="comment">! 创建 UO2 的 r-z 半截面</span></span>
+<span class="code-line"><i>21</i><span class="code">RECTNG,r_fuel,r_clad,0,rod_length </span><span class="comment">! 创建包壳的 r-z 半截面</span></span>
+<span class="code-line"><i>22</i><span class="code">AGLUE,ALL                       </span><span class="comment">! 粘合共用界面，假设温度与位移连续</span></span>
+<span class="code-line"><i>23</i><span class="code">ASEL,S,LOC,X,0,r_fuel           </span><span class="comment">! 选择面积形心位于燃料径向范围的区域</span></span>
+<span class="code-line"><i>24</i><span class="code">AATT,1,,1                       </span><span class="comment">! 将燃料区域指定为材料 1、单元类型 1</span></span>
+<span class="code-line"><i>25</i><span class="code">ASEL,S,LOC,X,r_fuel,r_clad      </span><span class="comment">! 选择面积形心位于包壳径向范围的区域</span></span>
+<span class="code-line"><i>26</i><span class="code">AATT,2,,1                       </span><span class="comment">! 将包壳区域指定为材料 2、单元类型 1</span></span>
+<span class="code-line"><i>27</i><span class="code">ALLSEL,ALL                      </span><span class="comment">! 恢复全部几何实体</span></span>
+<span class="code-line"><i>28</i><span class="code">ESIZE,esize_r                   </span><span class="comment">! 设定全局网格尺寸</span></span>
+<span class="code-line"><i>29</i><span class="code">AMESH,ALL                       </span><span class="comment">! 对两个面积划分共节点网格</span></span>
+<span class="code-line"><i>30</i><span class="code">LSEL,S,LOC,X,r_clad             </span><span class="comment">! 仅选择包壳外半径处的边界线</span></span>
+<span class="code-line"><i>31</i><span class="code">SFL,ALL,CONV,hconv,tbulk        </span><span class="comment">! 外壁施加对流边界，h 单位 W/(m^2·K)</span></span>
+<span class="code-line"><i>32</i><span class="code">ALLSEL,ALL                      </span><span class="comment">! 恢复全部线、节点和单元</span></span>
+<span class="code-line"><i>33</i><span class="code">ESEL,S,MAT,,1                   </span><span class="comment">! 仅选择燃料材料的单元</span></span>
+<span class="code-line"><i>34</i><span class="code">BFE,ALL,HGEN,,qvol              </span><span class="comment">! 向燃料单元施加体积热源，单位 W/m^3</span></span>
+<span class="code-line"><i>35</i><span class="code">ALLSEL,ALL                      </span><span class="comment">! 恢复全部单元参与求解</span></span>
+<span class="code-line"><i>36</i><span class="code">FINISH                          </span><span class="comment">! 退出热分析前处理</span></span>
+<span class="code-line"><i>37</i><span class="code"></span></span>
+<span class="code-line"><i>38</i><span class="code">/SOLU                           </span><span class="comment">! 进入热求解器</span></span>
+<span class="code-line"><i>39</i><span class="code">ANTYPE,STATIC                   </span><span class="comment">! 稳态热传导分析</span></span>
+<span class="code-line"><i>40</i><span class="code">SOLVE                           </span><span class="comment">! 生成可供 LDREAD 读取的 .rth 温度场</span></span>
+<span class="code-line"><i>41</i><span class="code">FINISH                          </span><span class="comment">! 退出热求解器</span></span>
+<span class="code-line"><i>42</i><span class="code"></span></span>
+<span class="code-line"><i>43</i><span class="code"></span><span class="comment">! ----- 单向传递：保留节点与网格，将热单元切换为结构单元 -----</span></span>
+<span class="code-line"><i>44</i><span class="code">/PREP7                          </span><span class="comment">! 返回前处理器转换单元类型</span></span>
+<span class="code-line"><i>45</i><span class="code">ALLSEL,ALL                      </span><span class="comment">! 确保删除载荷和转换针对完整模型</span></span>
+<span class="code-line"><i>46</i><span class="code">SFLDELE,ALL,CONV               </span><span class="comment">! 清除热对流边界及相应有限元载荷</span></span>
+<span class="code-line"><i>47</i><span class="code">BFEDELE,ALL,HGEN               </span><span class="comment">! 清除热体积热源，避免遗留载荷干扰</span></span>
+<span class="code-line"><i>48</i><span class="code">ETCHG,TTS                       </span><span class="comment">! 将 PLANE55 转换为 PLANE182，节点编号不变</span></span>
+<span class="code-line"><i>49</i><span class="code">KEYOPT,1,3,1                    </span><span class="comment">! ETCHG 重置选项后，重新设置结构轴对称行为</span></span>
+<span class="code-line"><i>50</i><span class="code">MP,EX,1,2.00e11                 </span><span class="comment">! UO2 教学弹性模量，单位 Pa</span></span>
+<span class="code-line"><i>51</i><span class="code">MP,PRXY,1,0.30                  </span><span class="comment">! UO2 教学泊松比，无量纲</span></span>
+<span class="code-line"><i>52</i><span class="code">MP,ALPX,1,1.00e-5               </span><span class="comment">! UO2 教学线膨胀系数，单位 1/K</span></span>
+<span class="code-line"><i>53</i><span class="code">MP,EX,2,1.00e11                 </span><span class="comment">! 包壳教学弹性模量，单位 Pa</span></span>
+<span class="code-line"><i>54</i><span class="code">MP,PRXY,2,0.33                  </span><span class="comment">! 包壳教学泊松比，无量纲</span></span>
+<span class="code-line"><i>55</i><span class="code">MP,ALPX,2,5.50e-6               </span><span class="comment">! 包壳教学线膨胀系数，单位 1/K</span></span>
+<span class="code-line"><i>56</i><span class="code">NSEL,S,LOC,X,0                  </span><span class="comment">! 选择 r=0 的全部轴线节点</span></span>
+<span class="code-line"><i>57</i><span class="code">D,ALL,UX,0                      </span><span class="comment">! 轴线径向位移为零，保持轴对称运动学</span></span>
+<span class="code-line"><i>58</i><span class="code">NSEL,R,LOC,Y,0                  </span><span class="comment">! 从轴线节点中保留 z=0 的基准节点</span></span>
+<span class="code-line"><i>59</i><span class="code">*GET,n_anchor,NODE,0,NUM,MIN    </span><span class="comment">! 取得一个基准节点编号以消除轴向刚体平移</span></span>
+<span class="code-line"><i>60</i><span class="code">D,n_anchor,UY,0                 </span><span class="comment">! 仅固定该节点的轴向位移，不钳制整端面</span></span>
+<span class="code-line"><i>61</i><span class="code">ALLSEL,ALL                      </span><span class="comment">! 恢复完整网格以读取所有节点温度</span></span>
+<span class="code-line"><i>62</i><span class="code">FINISH                          </span><span class="comment">! 退出结构分析前处理</span></span>
+<span class="code-line"><i>63</i><span class="code"></span></span>
+<span class="code-line"><i>64</i><span class="code">/SOLU                           </span><span class="comment">! 进入结构求解器</span></span>
+<span class="code-line"><i>65</i><span class="code">ANTYPE,STATIC                   </span><span class="comment">! 指定线弹性静力结构分析</span></span>
+<span class="code-line"><i>66</i><span class="code">TREF,tbulk                      </span><span class="comment">! 设定无热应变参考温度为冷却剂体温，单位 K</span></span>
+<span class="code-line"><i>67</i><span class="code">LDREAD,TEMP,LAST,,,,lesson6_fuelrod,rth </span><span class="comment">! 从热结果末步读取全部节点温度作为结构体温载荷</span></span>
+<span class="code-line"><i>68</i><span class="code">SOLVE                           </span><span class="comment">! 计算完美粘合假设下的热变形和热应力</span></span>
+<span class="code-line"><i>69</i><span class="code">FINISH                          </span><span class="comment">! 退出结构求解器</span></span>
+<span class="code-line"><i>70</i><span class="code"></span></span>
+<span class="code-line"><i>71</i><span class="code">/POST1                          </span><span class="comment">! 进入通用后处理器</span></span>
+<span class="code-line"><i>72</i><span class="code">SET,LAST                        </span><span class="comment">! 读取最后一个结构结果集</span></span>
+<span class="code-line"><i>73</i><span class="code">PLNSOL,U,SUM                    </span><span class="comment">! 绘制总位移云图，结果单位 m</span></span>
+<span class="code-line"><i>74</i><span class="code">PLNSOL,S,EQV                    </span><span class="comment">! 绘制等效应力云图，结果单位 Pa</span></span>
+<span class="code-line"><i>75</i><span class="code">*GET,smax,NODE,0,MAX,S,EQV      </span><span class="comment">! 提取全模型节点等效应力最大值，单位 Pa</span></span>
+<span class="code-line"><i>76</i><span class="code">*GET,umax,NODE,0,MAX,U,SUM      </span><span class="comment">! 提取全模型节点总位移最大值，单位 m</span></span>
+<span class="code-line"><i>77</i><span class="code">*CFOPEN,lesson6_results,txt      </span><span class="comment">! 打开教学结果文本文件</span></span>
+<span class="code-line"><i>78</i><span class="code">*VWRITE,smax,umax               </span><span class="comment">! 写出应力和位移；下一行是必须保持纯净的 FORTRAN 格式行</span></span>
+<span class="code-line"><i>79</i><span class="code">(&#x27;Smax [Pa] = &#x27;,E16.8,&#x27;, Umax [m] = &#x27;,E16.8)</span></span>
+<span class="code-line"><i>80</i><span class="code">*CFCLOS                         </span><span class="comment">! 关闭并刷新结果文件</span></span>
+<span class="code-line"><i>81</i><span class="code">FINISH                          </span><span class="comment">! 结束第 6 课脚本</span></span></pre></main><footer class="shell">ANSYS APDL 反应堆热工结构每日学习 · 示例用于建模训练和命令理解</footer></body></html>
