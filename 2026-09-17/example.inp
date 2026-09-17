@@ -1,0 +1,65 @@
+! 第7课：受约束包壳的热膨胀与热应力；SI单位 m、kg、s、K、Pa
+/CLEAR,NOSTART                 ! 清空数据库，建立独立教学算例
+/FILNAME,lesson7_clad          ! 设置输出文件名前缀
+/PREP7                        ! 进入前处理器
+ri=4.10e-3                    ! 包壳内半径，单位 m
+ro=4.75e-3                    ! 包壳外半径，单位 m
+clad_length=0.10              ! 包壳轴向长度，单位 m
+t_ref=580                     ! 无热应变参考温度，单位 K
+t_hot=650                     ! 均匀服役温度，单位 K
+alpha=5.5e-6                  ! 教学包壳线膨胀系数，单位 1/K
+young=1.00e11                 ! 教学包壳弹性模量，单位 Pa
+nu=0.33                       ! 教学包壳泊松比，无量纲
+esize_clad=0.15e-3            ! 目标网格尺寸，单位 m
+ET,1,PLANE182                 ! 创建二维结构单元
+KEYOPT,1,3,1                  ! 设置轴对称行为，X为半径、Y为轴向
+MP,EX,1,young                 ! 设置线弹性模量
+MP,PRXY,1,nu                  ! 设置泊松比
+MP,ALPX,1,alpha               ! 设置各向同性热膨胀系数
+RECTNG,ri,ro,0,clad_length    ! 创建中空包壳的r-z截面
+ESIZE,esize_clad              ! 设置全局目标单元尺寸
+AMESH,ALL                     ! 对包壳截面划分网格
+NSEL,S,LOC,X,ri               ! 选择包壳内半径处的节点
+NSEL,R,LOC,Y,0                ! 在内半径节点中保留底端角点
+*GET,n_anchor,NODE,0,NUM,MIN  ! 记录消除轴向刚体平移的基准节点
+ALLSEL,ALL                    ! 恢复全部节点和单元
+NSEL,S,LOC,X,ro               ! 选择包壳外半径处的节点
+NSEL,R,LOC,Y,clad_length      ! 保留外半径顶端的位移测点
+*GET,n_top,NODE,0,NUM,MIN     ! 记录自由热膨胀时的轴向位移测点
+ALLSEL,ALL                    ! 恢复全部节点和单元
+FINISH                        ! 完成几何、材料和测点设置
+
+! 工况A：仅消除一个轴向刚体平移，自由热膨胀
+/SOLU                         ! 进入结构求解器
+ANTYPE,STATIC                 ! 进行线弹性静力分析
+TREF,t_ref                    ! 设定热应变零参考温度
+BFUNIF,TEMP,t_hot             ! 对没有其他节点温度载荷的模型设置均匀温度
+D,n_anchor,UY,0              ! 仅固定底部一个节点的轴向位移
+SOLVE                         ! 求解自由膨胀工况
+FINISH                        ! 退出求解器
+/POST1                        ! 进入结果后处理
+SET,LAST                      ! 读取自由膨胀结果集
+*GET,uy_free,NODE,n_top,U,Y   ! 提取顶端测点自由轴向位移，单位 m
+*GET,seqv_free,NODE,0,MAX,S,EQV ! 提取自由膨胀等效应力最大值，单位 Pa
+FINISH                        ! 结束自由膨胀结果读取
+
+! 工况B：底端和顶端轴向位移均约束，考察热应力
+/PREP7                        ! 返回前处理器修改位移约束
+DDELE,n_anchor,UY             ! 删除工况A的单节点轴向约束
+NSEL,S,LOC,Y,0                ! 选择包壳底端全部节点
+NSEL,A,LOC,Y,clad_length      ! 加选包壳顶端全部节点
+D,ALL,UY,0                    ! 将两端轴向位移设为零
+ALLSEL,ALL                    ! 恢复完整模型选择集
+FINISH                        ! 完成工况B的边界修改
+/SOLU                         ! 再次进入静力求解器
+SOLVE                         ! 求解轴向受约束的热膨胀工况
+FINISH                        ! 退出求解器
+/POST1                        ! 进入后处理器
+SET,LAST                      ! 读取受约束工况的最新结果
+*GET,seqv_fixed,NODE,0,MAX,S,EQV ! 提取受约束等效应力最大值，单位 Pa
+PLNSOL,S,EQV                  ! 绘制受约束包壳的等效应力云图
+*CFOPEN,lesson7_results,txt   ! 打开输出文本文件
+*VWRITE,uy_free,seqv_free,seqv_fixed ! 写入自由位移和两工况最大等效应力；下一行是格式描述符
+('Uy free [m] = ',E16.8,', Seqv free [Pa] = ',E16.8,', Seqv fixed [Pa] = ',E16.8)
+*CFCLOS                       ! 关闭并刷新输出文件
+FINISH                        ! 结束第7课算例

@@ -1,0 +1,114 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07131f">
+<title>第 7 课 · 受约束包壳的热膨胀与热应力</title><style>
+:root{--bg:#06111b;--panel:#0d2130;--paper:#f6faf8;--ink:#102936;--muted:#617681;--cyan:#62e0df;--gold:#ffd166;--line:#dce8e7}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#173f50 0,transparent 35%),var(--bg);color:#e9f7f5;font:16px/1.78 Inter,"PingFang SC","Microsoft YaHei",sans-serif}a{color:inherit}.shell{width:min(1060px,calc(100% - 28px));margin:auto}header{padding:56px 0 36px}.back{color:var(--cyan);text-decoration:none;font-weight:800}.eyebrow{margin-top:30px;color:var(--cyan);font-weight:900;letter-spacing:.13em}h1{font-size:clamp(34px,6vw,62px);line-height:1.12;margin:10px 0}.meta{color:#acc4c9}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}.button{padding:11px 16px;border-radius:999px;background:var(--cyan);color:#06212a;text-decoration:none;font-weight:900}.button.secondary{background:transparent;color:var(--cyan);border:1px solid #2a6170}main{background:var(--paper);color:var(--ink);border-radius:22px 22px 0 0;padding:34px clamp(20px,5vw,64px) 72px}.status{border-left:5px solid var(--gold);background:#fff5d5;padding:12px 16px;border-radius:0 9px 9px 0}figure{margin:28px 0 36px}figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:16px;background:#f4faf9}figcaption{color:var(--muted);font-size:13px;margin-top:8px}h2{font-size:24px;margin:34px 0 10px;color:#0c6870}h3{color:#0c6870}p,li{max-width:850px}code{background:#e4efed;border-radius:5px;padding:2px 5px;color:#0b5f67}.commands{display:flex;gap:7px;flex-wrap:wrap;margin:18px 0 28px}.commands span{background:#dcefed;color:#135d63;border-radius:999px;padding:4px 9px;font:13px Consolas,monospace}blockquote{margin:28px 0;border-left:4px solid #e0a92f;background:#fff7dc;padding:13px 16px}pre{overflow:auto;background:#071621;color:#d8efea;padding:18px 0;border-radius:14px;font:14px/1.65 Consolas,"Microsoft YaHei",monospace}.code-line{display:block;min-width:max-content;padding:0 20px}.code-line:hover{background:#102838}.code-line i{display:inline-block;width:36px;margin-right:16px;color:#52707c;font-style:normal;text-align:right;user-select:none}.code-line .code{color:#d8efea}.code-line .comment{color:#84d7a0}footer{color:#8ba5ac;padding:25px 0 42px}@media(max-width:600px){header{padding-top:34px}main{border-radius:16px 16px 0 0}}
+</style></head><body><header class="shell"><a class="back" href="../">← 返回课程首页</a><div class="eyebrow">2026-09-17 · LESSON 7</div><h1>受约束包壳的热膨胀与热应力</h1><p class="meta">难度：入门进阶 · 前置课程：2026-09-16 第6课：燃料温度场向包壳结构场传递</p><div class="actions"><a class="button" href="example.inp" download>下载 APDL 示例</a><a class="button secondary" href="model.svg" download>下载模型图</a><a class="button secondary" href="README.md">查看 Markdown 讲义</a></div></header><main class="shell"><p class="status"><strong>验证状态：</strong>已静态检查，尚未运行 MAPDL<br>已按 Ansys 2026 R1 官方 PLANE182、BFUNIF、DDELE 文档静态核对轴对称选项、温度载荷与边界切换；已核对 SI 单位和每条可执行命令的行尾中文注释。本机未运行 MAPDL，故不提供计算数值。</p><figure><img src="model.svg" alt="受约束包壳的热膨胀与热应力模型示意图"><figcaption>几何、材料区域、载荷和边界条件与本课 example.inp 对应；示意尺寸以图中标注为准。</figcaption></figure><div class="commands"><span>/CLEAR</span><span>/PREP7</span><span>PLANE182</span><span>KEYOPT</span><span>MP</span><span>RECTNG</span><span>ESIZE</span><span>AMESH</span><span>NSEL</span><span>D</span><span>DDELE</span><span>TREF</span><span>BFUNIF</span><span>SOLVE</span><span>SET</span><span>*GET</span><span>PLNSOL</span><span>*VWRITE</span></div><h2>今日目标</h2>
+<p>用同一包壳轴对称模型比较“仅消除刚体位移”和“两端轴向受约束”两种边界条件，理解温升本身与热膨胀受限如何分别影响位移和热应力。</p>
+<h2>物理问题</h2>
+<p>以燃料棒包壳为背景，建立内半径 4.10 mm、外半径 4.75 mm、轴向长度 100 mm 的中空圆柱二维 <code>r-z</code> 截面。用 <code>PLANE182</code> 轴对称结构单元，初始无应变温度为 580 K，工作温度为 650 K。统一使用 SI 单位：m、kg、s、K、Pa。教学材料参数为 <code>E=100 GPa</code>、<code>ν=0.33</code>、<code>α=5.5×10⁻⁶ K⁻¹</code>，并非特定包壳牌号的真实材料数据。</p>
+<p>工况 A 仅固定底部内壁角点的轴向位移，抑制整体沿轴向平移，允许径向及轴向热膨胀；工况 B 将上下端面全部节点的 <code>UY</code> 固定，限制轴向热膨胀。包壳位于 <code>r&gt;0</code> 的环形区域，径向不应额外固定为零。两个工况使用同一网格和同一温度，差别仅为轴向约束。该均匀温度、线弹性、无接触模型适合演示边界条件影响，不用于真实燃料棒寿命或安全评价。</p>
+<h2>关键命令</h2>
+<ul>
+<li><code>ET,1,PLANE182</code> 与 <code>KEYOPT,1,3,1</code>：定义轴对称二维结构单元，X 对应径向，Y 对应轴向。</li>
+<li><code>MP,EX/PRXY/ALPX</code>：分别设置弹性模量、泊松比与线膨胀系数。</li>
+<li><code>RECTNG</code>、<code>ESIZE</code>、<code>AMESH</code>：建立包壳截面并划分网格。</li>
+<li><code>NSEL,S/R/A,LOC,...</code>：按位置筛选角点或两端面节点；每次施加载荷后用 <code>ALLSEL,ALL</code> 恢复选择集。</li>
+<li><code>TREF</code>：给出热应变零参考温度；<code>BFUNIF,TEMP</code>：给没有指定其他体温载荷的单元提供均匀温度。</li>
+<li><code>D</code> 与 <code>DDELE</code>：施加和删除位移约束，以便在同一网格上切换工况。</li>
+<li><code>SOLVE</code>、<code>SET,LAST</code>、<code>*GET</code>：求解并提取轴向位移与节点等效应力。</li>
+</ul>
+<h2>分析流程</h2>
+<ol>
+<li>建立轴对称包壳截面，记录底部内壁基准节点和顶部外壁测点。</li>
+<li>设置 <code>TREF=580 K</code>、<code>BFUNIF,TEMP,650 K</code>，仅约束基准节点 <code>UY=0</code>，求解自由膨胀工况。</li>
+<li>读取顶部测点 <code>UY</code> 和最大等效应力；删除该单点约束，把上下端全部节点 <code>UY=0</code>，再求解受约束工况。</li>
+<li>比较两工况结果和云图，并通过反力、网格细化及解析量级检验判断边界是否正确。</li>
+</ol>
+<h2>完整脚本</h2>
+<p>下载同目录的 [example.inp](example.inp)。每条可执行命令及参数行均有中文行尾注释；<code>*VWRITE</code> 后的 FORTRAN 格式描述符按 APDL 语法保留为纯格式行。</p>
+<h2>预期结果</h2>
+<p>自由工况顶部轴向位移的量级应接近 <code>αΔT L = 5.5×10⁻⁶×70×0.10 ≈ 3.85×10⁻⁵ m</code>，外半径自由径向位移量级约 <code>αΔT r_o ≈ 1.83×10⁻⁶ m</code>。均匀升温且无其他载荷时，自由工况理想热应力趋近于零；两端约束时轴向热应力的估计量级为 <code>EαΔT ≈ 38.5 MPa</code>。这些是解析量级核对值，**不是本机 MAPDL 运行结果**；端部局部峰值、数值误差和具体 von Mises 分布须以求解并检查收敛后为准。</p>
+<h2>验证清单</h2>
+<ol>
+<li>**单位与载荷**：温度用 K，弹性模量用 Pa，热膨胀系数用 1/K；确认两工况共享 <code>TREF</code> 和 <code>BFUNIF</code>，且没有意外保留其他节点温度载荷。</li>
+<li>**边界与反力**：自由工况只有一个 <code>UY</code> 约束，径向自由；受约束工况检查两端 <code>UY=0</code>，轴向反力合力应成对平衡。端面被固定时，顶端 <code>UY=0</code> 是边界条件本身，不能当成独立验证指标。</li>
+<li>**解析量级**：比较自由工况顶部位移与 <code>αΔTL</code>；比较受约束工况中段轴向应力与 <code>EαΔT</code> 的量级，不要求边缘峰值完全一致。</li>
+<li>**网格敏感性**：把网格尺寸从 0.15 mm 缩小到 0.075 mm，比较中段应力和总反力；避免仅凭单个节点最大应力判断收敛。</li>
+<li>**物理假设**：真实包壳还受径向温度梯度、内压、燃料接触、端塞约束、辐照和蠕变影响；发表研究需说明哪些因素被纳入、哪些因素经过敏感性排除。</li>
+</ol>
+<h2>常见错误</h2>
+<ol>
+<li>忘记 <code>KEYOPT,1,3,1</code>，默认按平面应力算，丢失正确的环向应力与圆柱运动学。</li>
+<li>对中空环形包壳误把内壁全部 <code>UX=0</code> 当作轴线条件，人工压住径向热膨胀。</li>
+<li>比较两工况前未删除基准约束、未恢复完整节点选择集或叠加了旧温度载荷，导致约束和载荷不一致。</li>
+</ol>
+<h2>练习题</h2>
+<ol>
+<li>把工作温度依次改为 610、650、690 K，记录自由顶部位移和受约束中段应力，检查其与温差是否近似线性。</li>
+<li>将均匀温度替换为包壳内外表面不同温度，逐步加入燃料接触和内压，区分温度梯度造成的弯曲/径向应力与端部约束造成的轴向应力。</li>
+</ol>
+<p>**官方命令依据**：[PLANE182 轴对称单元](https://ansyshelp.ansys.com/public/Views/Secured/corp/v261/en/ans_elem/Hlp_E_PLANE182.html)、[BFUNIF 均匀体载荷温度](https://ansyshelp.ansys.com/public/Views/Secured/corp/v251/en/ans_cmd/Hlp_C_BFUNIF.html)、[DDELE 删除位移约束](https://ansyshelp.ansys.com/public/Views/Secured/corp/v252/en/ans_cmd/Hlp_C_DDELE.html)。本课仅完成静态检查，尚未在 MAPDL 中运行。</p><h2>完整 example.inp（逐行中文注释）</h2><pre><span class="code-line"><i>01</i><span class="code"></span><span class="comment">! 第7课：受约束包壳的热膨胀与热应力；SI单位 m、kg、s、K、Pa</span></span>
+<span class="code-line"><i>02</i><span class="code">/CLEAR,NOSTART                 </span><span class="comment">! 清空数据库，建立独立教学算例</span></span>
+<span class="code-line"><i>03</i><span class="code">/FILNAME,lesson7_clad          </span><span class="comment">! 设置输出文件名前缀</span></span>
+<span class="code-line"><i>04</i><span class="code">/PREP7                        </span><span class="comment">! 进入前处理器</span></span>
+<span class="code-line"><i>05</i><span class="code">ri=4.10e-3                    </span><span class="comment">! 包壳内半径，单位 m</span></span>
+<span class="code-line"><i>06</i><span class="code">ro=4.75e-3                    </span><span class="comment">! 包壳外半径，单位 m</span></span>
+<span class="code-line"><i>07</i><span class="code">clad_length=0.10              </span><span class="comment">! 包壳轴向长度，单位 m</span></span>
+<span class="code-line"><i>08</i><span class="code">t_ref=580                     </span><span class="comment">! 无热应变参考温度，单位 K</span></span>
+<span class="code-line"><i>09</i><span class="code">t_hot=650                     </span><span class="comment">! 均匀服役温度，单位 K</span></span>
+<span class="code-line"><i>10</i><span class="code">alpha=5.5e-6                  </span><span class="comment">! 教学包壳线膨胀系数，单位 1/K</span></span>
+<span class="code-line"><i>11</i><span class="code">young=1.00e11                 </span><span class="comment">! 教学包壳弹性模量，单位 Pa</span></span>
+<span class="code-line"><i>12</i><span class="code">nu=0.33                       </span><span class="comment">! 教学包壳泊松比，无量纲</span></span>
+<span class="code-line"><i>13</i><span class="code">esize_clad=0.15e-3            </span><span class="comment">! 目标网格尺寸，单位 m</span></span>
+<span class="code-line"><i>14</i><span class="code">ET,1,PLANE182                 </span><span class="comment">! 创建二维结构单元</span></span>
+<span class="code-line"><i>15</i><span class="code">KEYOPT,1,3,1                  </span><span class="comment">! 设置轴对称行为，X为半径、Y为轴向</span></span>
+<span class="code-line"><i>16</i><span class="code">MP,EX,1,young                 </span><span class="comment">! 设置线弹性模量</span></span>
+<span class="code-line"><i>17</i><span class="code">MP,PRXY,1,nu                  </span><span class="comment">! 设置泊松比</span></span>
+<span class="code-line"><i>18</i><span class="code">MP,ALPX,1,alpha               </span><span class="comment">! 设置各向同性热膨胀系数</span></span>
+<span class="code-line"><i>19</i><span class="code">RECTNG,ri,ro,0,clad_length    </span><span class="comment">! 创建中空包壳的r-z截面</span></span>
+<span class="code-line"><i>20</i><span class="code">ESIZE,esize_clad              </span><span class="comment">! 设置全局目标单元尺寸</span></span>
+<span class="code-line"><i>21</i><span class="code">AMESH,ALL                     </span><span class="comment">! 对包壳截面划分网格</span></span>
+<span class="code-line"><i>22</i><span class="code">NSEL,S,LOC,X,ri               </span><span class="comment">! 选择包壳内半径处的节点</span></span>
+<span class="code-line"><i>23</i><span class="code">NSEL,R,LOC,Y,0                </span><span class="comment">! 在内半径节点中保留底端角点</span></span>
+<span class="code-line"><i>24</i><span class="code">*GET,n_anchor,NODE,0,NUM,MIN  </span><span class="comment">! 记录消除轴向刚体平移的基准节点</span></span>
+<span class="code-line"><i>25</i><span class="code">ALLSEL,ALL                    </span><span class="comment">! 恢复全部节点和单元</span></span>
+<span class="code-line"><i>26</i><span class="code">NSEL,S,LOC,X,ro               </span><span class="comment">! 选择包壳外半径处的节点</span></span>
+<span class="code-line"><i>27</i><span class="code">NSEL,R,LOC,Y,clad_length      </span><span class="comment">! 保留外半径顶端的位移测点</span></span>
+<span class="code-line"><i>28</i><span class="code">*GET,n_top,NODE,0,NUM,MIN     </span><span class="comment">! 记录自由热膨胀时的轴向位移测点</span></span>
+<span class="code-line"><i>29</i><span class="code">ALLSEL,ALL                    </span><span class="comment">! 恢复全部节点和单元</span></span>
+<span class="code-line"><i>30</i><span class="code">FINISH                        </span><span class="comment">! 完成几何、材料和测点设置</span></span>
+<span class="code-line"><i>31</i><span class="code"></span></span>
+<span class="code-line"><i>32</i><span class="code"></span><span class="comment">! 工况A：仅消除一个轴向刚体平移，自由热膨胀</span></span>
+<span class="code-line"><i>33</i><span class="code">/SOLU                         </span><span class="comment">! 进入结构求解器</span></span>
+<span class="code-line"><i>34</i><span class="code">ANTYPE,STATIC                 </span><span class="comment">! 进行线弹性静力分析</span></span>
+<span class="code-line"><i>35</i><span class="code">TREF,t_ref                    </span><span class="comment">! 设定热应变零参考温度</span></span>
+<span class="code-line"><i>36</i><span class="code">BFUNIF,TEMP,t_hot             </span><span class="comment">! 对没有其他节点温度载荷的模型设置均匀温度</span></span>
+<span class="code-line"><i>37</i><span class="code">D,n_anchor,UY,0              </span><span class="comment">! 仅固定底部一个节点的轴向位移</span></span>
+<span class="code-line"><i>38</i><span class="code">SOLVE                         </span><span class="comment">! 求解自由膨胀工况</span></span>
+<span class="code-line"><i>39</i><span class="code">FINISH                        </span><span class="comment">! 退出求解器</span></span>
+<span class="code-line"><i>40</i><span class="code">/POST1                        </span><span class="comment">! 进入结果后处理</span></span>
+<span class="code-line"><i>41</i><span class="code">SET,LAST                      </span><span class="comment">! 读取自由膨胀结果集</span></span>
+<span class="code-line"><i>42</i><span class="code">*GET,uy_free,NODE,n_top,U,Y   </span><span class="comment">! 提取顶端测点自由轴向位移，单位 m</span></span>
+<span class="code-line"><i>43</i><span class="code">*GET,seqv_free,NODE,0,MAX,S,EQV </span><span class="comment">! 提取自由膨胀等效应力最大值，单位 Pa</span></span>
+<span class="code-line"><i>44</i><span class="code">FINISH                        </span><span class="comment">! 结束自由膨胀结果读取</span></span>
+<span class="code-line"><i>45</i><span class="code"></span></span>
+<span class="code-line"><i>46</i><span class="code"></span><span class="comment">! 工况B：底端和顶端轴向位移均约束，考察热应力</span></span>
+<span class="code-line"><i>47</i><span class="code">/PREP7                        </span><span class="comment">! 返回前处理器修改位移约束</span></span>
+<span class="code-line"><i>48</i><span class="code">DDELE,n_anchor,UY             </span><span class="comment">! 删除工况A的单节点轴向约束</span></span>
+<span class="code-line"><i>49</i><span class="code">NSEL,S,LOC,Y,0                </span><span class="comment">! 选择包壳底端全部节点</span></span>
+<span class="code-line"><i>50</i><span class="code">NSEL,A,LOC,Y,clad_length      </span><span class="comment">! 加选包壳顶端全部节点</span></span>
+<span class="code-line"><i>51</i><span class="code">D,ALL,UY,0                    </span><span class="comment">! 将两端轴向位移设为零</span></span>
+<span class="code-line"><i>52</i><span class="code">ALLSEL,ALL                    </span><span class="comment">! 恢复完整模型选择集</span></span>
+<span class="code-line"><i>53</i><span class="code">FINISH                        </span><span class="comment">! 完成工况B的边界修改</span></span>
+<span class="code-line"><i>54</i><span class="code">/SOLU                         </span><span class="comment">! 再次进入静力求解器</span></span>
+<span class="code-line"><i>55</i><span class="code">SOLVE                         </span><span class="comment">! 求解轴向受约束的热膨胀工况</span></span>
+<span class="code-line"><i>56</i><span class="code">FINISH                        </span><span class="comment">! 退出求解器</span></span>
+<span class="code-line"><i>57</i><span class="code">/POST1                        </span><span class="comment">! 进入后处理器</span></span>
+<span class="code-line"><i>58</i><span class="code">SET,LAST                      </span><span class="comment">! 读取受约束工况的最新结果</span></span>
+<span class="code-line"><i>59</i><span class="code">*GET,seqv_fixed,NODE,0,MAX,S,EQV </span><span class="comment">! 提取受约束等效应力最大值，单位 Pa</span></span>
+<span class="code-line"><i>60</i><span class="code">PLNSOL,S,EQV                  </span><span class="comment">! 绘制受约束包壳的等效应力云图</span></span>
+<span class="code-line"><i>61</i><span class="code">*CFOPEN,lesson7_results,txt   </span><span class="comment">! 打开输出文本文件</span></span>
+<span class="code-line"><i>62</i><span class="code">*VWRITE,uy_free,seqv_free,seqv_fixed </span><span class="comment">! 写入自由位移和两工况最大等效应力；下一行是格式描述符</span></span>
+<span class="code-line"><i>63</i><span class="code">(&#x27;Uy free [m] = &#x27;,E16.8,&#x27;, Seqv free [Pa] = &#x27;,E16.8,&#x27;, Seqv fixed [Pa] = &#x27;,E16.8)</span></span>
+<span class="code-line"><i>64</i><span class="code">*CFCLOS                       </span><span class="comment">! 关闭并刷新输出文件</span></span>
+<span class="code-line"><i>65</i><span class="code">FINISH                        </span><span class="comment">! 结束第7课算例</span></span></pre></main><footer class="shell">ANSYS APDL 反应堆热工结构每日学习 · 示例用于建模训练和命令理解</footer></body></html>

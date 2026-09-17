@@ -1,0 +1,29 @@
+{
+  "date": "2026-09-17",
+  "lesson": 7,
+  "topic": "受约束包壳的热膨胀与热应力",
+  "difficulty": "入门进阶",
+  "commands": [
+    "/CLEAR",
+    "/PREP7",
+    "PLANE182",
+    "KEYOPT",
+    "MP",
+    "RECTNG",
+    "ESIZE",
+    "AMESH",
+    "NSEL",
+    "D",
+    "DDELE",
+    "TREF",
+    "BFUNIF",
+    "SOLVE",
+    "SET",
+    "*GET",
+    "PLNSOL",
+    "*VWRITE"
+  ],
+  "validation_status": "static_only",
+  "validation_note": "已按 Ansys 2026 R1 官方 PLANE182、BFUNIF、DDELE 文档静态核对轴对称选项、温度载荷与边界切换；已核对 SI 单位和每条可执行命令的行尾中文注释。本机未运行 MAPDL，故不提供计算数值。",
+  "prerequisite": "2026-09-16 第6课：燃料温度场向包壳结构场传递"
+}
