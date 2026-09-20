@@ -1,0 +1,27 @@
+{
+  "date": "2026-09-20",
+  "lesson": 10,
+  "topic": "间隙闭合、接触压力与接触热阻参数化",
+  "difficulty": "入门进阶",
+  "commands": [
+    "/CLEAR",
+    "/PREP7",
+    "PLANE55",
+    "KEYOPT",
+    "MP",
+    "RECTNG",
+    "AATT",
+    "AGLUE",
+    "AMESH",
+    "BFA",
+    "SFL",
+    "*IF",
+    "*DO",
+    "SOLVE",
+    "*GET",
+    "*VWRITE"
+  ],
+  "validation_status": "static_only",
+  "validation_note": "已静态核对SI单位、轴对称热分析流程和每条可执行命令的中文行尾注释；本机未运行MAPDL，接触状态采用教学用等效间隙层/罚刚度参数化，不声称替代核级接触本构。",
+  "prerequisite": "第9课"
+}

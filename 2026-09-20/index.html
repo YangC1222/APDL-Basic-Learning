@@ -1,0 +1,109 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07131f">
+<title>第 10 课 · 间隙闭合、接触压力与接触热阻参数化</title><style>
+:root{--bg:#06111b;--panel:#0d2130;--paper:#f6faf8;--ink:#102936;--muted:#617681;--cyan:#62e0df;--gold:#ffd166;--line:#dce8e7}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#173f50 0,transparent 35%),var(--bg);color:#e9f7f5;font:16px/1.78 Inter,"PingFang SC","Microsoft YaHei",sans-serif}a{color:inherit}.shell{width:min(1060px,calc(100% - 28px));margin:auto}header{padding:56px 0 36px}.back{color:var(--cyan);text-decoration:none;font-weight:800}.eyebrow{margin-top:30px;color:var(--cyan);font-weight:900;letter-spacing:.13em}h1{font-size:clamp(34px,6vw,62px);line-height:1.12;margin:10px 0}.meta{color:#acc4c9}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}.button{padding:11px 16px;border-radius:999px;background:var(--cyan);color:#06212a;text-decoration:none;font-weight:900}.button.secondary{background:transparent;color:var(--cyan);border:1px solid #2a6170}main{background:var(--paper);color:var(--ink);border-radius:22px 22px 0 0;padding:34px clamp(20px,5vw,64px) 72px}.status{border-left:5px solid var(--gold);background:#fff5d5;padding:12px 16px;border-radius:0 9px 9px 0}figure{margin:28px 0 36px}figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:16px;background:#f4faf9}figcaption{color:var(--muted);font-size:13px;margin-top:8px}h2{font-size:24px;margin:34px 0 10px;color:#0c6870}h3{color:#0c6870}p,li{max-width:850px}code{background:#e4efed;border-radius:5px;padding:2px 5px;color:#0b5f67}.commands{display:flex;gap:7px;flex-wrap:wrap;margin:18px 0 28px}.commands span{background:#dcefed;color:#135d63;border-radius:999px;padding:4px 9px;font:13px Consolas,monospace}blockquote{margin:28px 0;border-left:4px solid #e0a92f;background:#fff7dc;padding:13px 16px}pre{overflow:auto;background:#071621;color:#d8efea;padding:18px 0;border-radius:14px;font:14px/1.65 Consolas,"Microsoft YaHei",monospace}.code-line{display:block;min-width:max-content;padding:0 20px}.code-line:hover{background:#102838}.code-line i{display:inline-block;width:36px;margin-right:16px;color:#52707c;font-style:normal;text-align:right;user-select:none}.code-line .code{color:#d8efea}.code-line .comment{color:#84d7a0}footer{color:#8ba5ac;padding:25px 0 42px}@media(max-width:600px){header{padding-top:34px}main{border-radius:16px 16px 0 0}}
+</style></head><body><header class="shell"><a class="back" href="../">← 返回课程首页</a><div class="eyebrow">2026-09-20 · LESSON 10</div><h1>间隙闭合、接触压力与接触热阻参数化</h1><p class="meta">难度：入门进阶 · 前置课程：第9课</p><div class="actions"><a class="button" href="example.inp" download>下载 APDL 示例</a><a class="button secondary" href="model.svg" download>下载模型图</a><a class="button secondary" href="README.md">查看 Markdown 讲义</a></div></header><main class="shell"><p class="status"><strong>验证状态：</strong>已静态检查，尚未运行 MAPDL<br>已静态核对SI单位、轴对称热分析流程和每条可执行命令的中文行尾注释；本机未运行MAPDL，接触状态采用教学用等效间隙层/罚刚度参数化，不声称替代核级接触本构。</p><figure><img src="model.svg" alt="间隙闭合、接触压力与接触热阻参数化模型示意图"><figcaption>几何、材料区域、载荷和边界条件与本课 example.inp 对应；示意尺寸以图中标注为准。</figcaption></figure><div class="commands"><span>/CLEAR</span><span>/PREP7</span><span>PLANE55</span><span>KEYOPT</span><span>MP</span><span>RECTNG</span><span>AATT</span><span>AGLUE</span><span>AMESH</span><span>BFA</span><span>SFL</span><span>*IF</span><span>*DO</span><span>SOLVE</span><span>*GET</span><span>*VWRITE</span></div><h2>今日目标</h2>
+<p>建立一个可复用的轴对称燃料—间隙—包壳教学模型，理解温度、热膨胀、间隙状态和界面传热之间的关系。</p>
+<h2>物理问题</h2>
+<p>采用 SI 单位制（m、kg、s、K、Pa）。模型表示一段长度为 0.10 m 的燃料棒 r-z 截面，燃料内生热，包壳外表面与冷却剂对流。示意图非比例。本课用于学习命令和建模链，不用于核安全评价；真实分析需采用经验证的燃料温度相关热物性、辐照膨胀、裂变气体压力、包壳蠕变及接触导热关联式。</p>
+<h2>关键命令</h2>
+<ul>
+<li><code>/PREP7</code>：进入前处理器，定义参数、材料、几何和网格。</li>
+<li><code>PLANE55</code>：二维热传导单元；轴对称选项把截面旋转为圆柱体。</li>
+<li><code>BFA,HGEN</code>：对燃料区域施加体积热源。</li>
+<li><code>SFL,CONV</code>：在包壳外边界施加对流换热。</li>
+<li><code>*IF</code>：根据剩余间隙选择开间隙或接触状态。</li>
+<li><code>*DO</code>：对温度等参数做批量扫描。</li>
+<li><code>*GET</code>：提取峰值温度等结果量。</li>
+<li><code>*VWRITE</code>：把参数和结果写入文本，便于画图或再分析。</li>
+</ul>
+<h2>完整脚本</h2>
+<p>下载并运行 [example.inp](example.inp)。脚本每条可执行命令均附中文行尾注释。</p>
+<h2>预期结果</h2>
+<p>检查温度场是否从燃料中心向冷却剂方向单调降低。涉及间隙状态时，应确认热膨胀导致剩余间隙减小；间隙闭合后接触压力增大、界面热阻降低。当前文件标记为 <code>static_only</code>，因此不报告未经本机MAPDL求解的数值。</p>
+<h2>验证清单</h2>
+<ol>
+<li>单位：体积热源为 W/m³，对流系数为 W/(m²·K)，应力为 Pa。</li>
+<li>边界：轴对称径向坐标必须是 X，轴向坐标是 Y。</li>
+<li>能量：稳态时外表面对流带走的热量应接近燃料总发热。</li>
+<li>网格：至少比较两种燃料、间隙和包壳网格尺寸。</li>
+<li>状态：开间隙/接触切换点附近应加密参数步长。</li>
+</ol>
+<h2>常见错误</h2>
+<ul>
+<li>把直径当半径输入，导致体积和线功率相差数倍。</li>
+<li>只改变界面导热系数，却没有检查热膨胀和接触状态是否一致。</li>
+<li>将教学罚刚度当真实材料参数；正式模型应由接触算法和试验标定。</li>
+</ul>
+<h2>练习题</h2>
+<ol>
+<li>把燃料体积热源分别改为 1.5×10⁸、2.0×10⁸、2.5×10⁸ W/m³，比较峰值温度。</li>
+<li>将外表面对流温度改成瞬态入口温度历史，并讨论控制棒抽出引起升功率时的间隙闭合顺序。</li>
+</ol><h2>完整 example.inp（逐行中文注释）</h2><pre><span class="code-line"><i>01</i><span class="code"></span><span class="comment">! 第10课：间隙闭合、接触压力与接触热阻参数化；SI单位 m、kg、s、K、Pa</span></span>
+<span class="code-line"><i>02</i><span class="code">/CLEAR,NOSTART                 </span><span class="comment">! 清空数据库，建立参数扫描算例</span></span>
+<span class="code-line"><i>03</i><span class="code">/FILNAME,lesson10_scan        </span><span class="comment">! 设置输出文件名前缀</span></span>
+<span class="code-line"><i>04</i><span class="code">/PREP7                        </span><span class="comment">! 进入前处理器并定义参数</span></span>
+<span class="code-line"><i>05</i><span class="code">rf=4.00e-3                    </span><span class="comment">! 燃料半径，单位 m</span></span>
+<span class="code-line"><i>06</i><span class="code">rc_i=4.10e-3                  </span><span class="comment">! 包壳内半径，单位 m</span></span>
+<span class="code-line"><i>07</i><span class="code">gap0=rc_i-rf                  </span><span class="comment">! 初始径向间隙，单位 m</span></span>
+<span class="code-line"><i>08</i><span class="code">tref=293                      </span><span class="comment">! 参考温度，单位 K</span></span>
+<span class="code-line"><i>09</i><span class="code">afuel=10.0e-6                 </span><span class="comment">! 燃料线膨胀系数，单位 1/K</span></span>
+<span class="code-line"><i>10</i><span class="code">aclad=5.5e-6                  </span><span class="comment">! 包壳线膨胀系数，单位 1/K</span></span>
+<span class="code-line"><i>11</i><span class="code">tclad=650                     </span><span class="comment">! 包壳平均温度，单位 K</span></span>
+<span class="code-line"><i>12</i><span class="code">kcontact=2.0e12               </span><span class="comment">! 教学接触罚刚度，单位 Pa/m</span></span>
+<span class="code-line"><i>13</i><span class="code">hopen=2500                    </span><span class="comment">! 开间隙导热系数，单位 W/(m^2 K)</span></span>
+<span class="code-line"><i>14</i><span class="code">hbase=8000                    </span><span class="comment">! 刚接触时导热系数，单位 W/(m^2 K)</span></span>
+<span class="code-line"><i>15</i><span class="code">hslope=2.0e-5                 </span><span class="comment">! 压力增量换热系数，单位 W/(m^2 K Pa)</span></span>
+<span class="code-line"><i>16</i><span class="code">*DIM,scan,ARRAY,6,5           </span><span class="comment">! 定义6行5列结果数组</span></span>
+<span class="code-line"><i>17</i><span class="code">*CFOPEN,lesson10_scan,txt     </span><span class="comment">! 打开参数扫描结果文件</span></span>
+<span class="code-line"><i>18</i><span class="code">*VWRITE                      </span><span class="comment">! 写入表头；下一行为字符格式</span></span>
+<span class="code-line"><i>19</i><span class="code">(&#x27;Tfuel[K],Gap[m],Pressure[Pa],Hgap[W/m2K],Rth[m2K/W]&#x27;)</span></span>
+<span class="code-line"><i>20</i><span class="code">*DO,ii,1,6,1                 </span><span class="comment">! 循环六个燃料平均温度工况</span></span>
+<span class="code-line"><i>21</i><span class="code">  tfuel=700+(ii-1)*100        </span><span class="comment">! 设置本次燃料温度，单位 K</span></span>
+<span class="code-line"><i>22</i><span class="code">  uf=rf*afuel*(tfuel-tref)    </span><span class="comment">! 计算燃料自由径向膨胀，单位 m</span></span>
+<span class="code-line"><i>23</i><span class="code">  uc=rc_i*aclad*(tclad-tref)  </span><span class="comment">! 计算包壳自由径向膨胀，单位 m</span></span>
+<span class="code-line"><i>24</i><span class="code">  gap=gap0+uc-uf              </span><span class="comment">! 更新热膨胀后的间隙，单位 m</span></span>
+<span class="code-line"><i>25</i><span class="code">  *IF,gap,GT,0,THEN           </span><span class="comment">! 判断是否保持开间隙</span></span>
+<span class="code-line"><i>26</i><span class="code">    pressure=0                </span><span class="comment">! 开间隙时接触压力为零</span></span>
+<span class="code-line"><i>27</i><span class="code">    hgap=hopen                </span><span class="comment">! 使用开间隙导热系数</span></span>
+<span class="code-line"><i>28</i><span class="code">  *ELSE                       </span><span class="comment">! 进入接触闭合分支</span></span>
+<span class="code-line"><i>29</i><span class="code">    penetration=-gap          </span><span class="comment">! 将负间隙换为几何过盈量，单位 m</span></span>
+<span class="code-line"><i>30</i><span class="code">    pressure=kcontact*penetration </span><span class="comment">! 用教学罚刚度估算接触压力，单位 Pa</span></span>
+<span class="code-line"><i>31</i><span class="code">    hgap=hbase+hslope*pressure </span><span class="comment">! 令接触导热随压力增加</span></span>
+<span class="code-line"><i>32</i><span class="code">  *ENDIF                      </span><span class="comment">! 结束开闭状态分支</span></span>
+<span class="code-line"><i>33</i><span class="code">  rth=1/hgap                  </span><span class="comment">! 计算单位面积接触热阻，单位 m^2 K/W</span></span>
+<span class="code-line"><i>34</i><span class="code">  scan(ii,1)=tfuel            </span><span class="comment">! 保存燃料温度</span></span>
+<span class="code-line"><i>35</i><span class="code">  scan(ii,2)=gap              </span><span class="comment">! 保存剩余间隙或过盈量</span></span>
+<span class="code-line"><i>36</i><span class="code">  scan(ii,3)=pressure         </span><span class="comment">! 保存接触压力</span></span>
+<span class="code-line"><i>37</i><span class="code">  scan(ii,4)=hgap             </span><span class="comment">! 保存界面导热系数</span></span>
+<span class="code-line"><i>38</i><span class="code">  scan(ii,5)=rth              </span><span class="comment">! 保存接触热阻</span></span>
+<span class="code-line"><i>39</i><span class="code">  *VWRITE,tfuel,gap,pressure,hgap,rth </span><span class="comment">! 输出当前工况；下一行为格式</span></span>
+<span class="code-line"><i>40</i><span class="code">  (F10.2,&#x27;,&#x27;,E16.8,&#x27;,&#x27;,E16.8,&#x27;,&#x27;,E16.8,&#x27;,&#x27;,E16.8)</span></span>
+<span class="code-line"><i>41</i><span class="code">*ENDDO                       </span><span class="comment">! 结束温度参数循环</span></span>
+<span class="code-line"><i>42</i><span class="code">*CFCLOS                      </span><span class="comment">! 关闭结果文件</span></span>
+<span class="code-line"><i>43</i><span class="code">ET,1,PLANE55                 </span><span class="comment">! 定义代表工况的二维热传导单元</span></span>
+<span class="code-line"><i>44</i><span class="code">KEYOPT,1,3,1                 </span><span class="comment">! 设置轴对称热分析</span></span>
+<span class="code-line"><i>45</i><span class="code">kgap=hgap*MAX(gap0,1.0e-6)  </span><span class="comment">! 把最后工况界面导热换算为薄层导热率</span></span>
+<span class="code-line"><i>46</i><span class="code">MP,KXX,1,3.0                </span><span class="comment">! 设置燃料导热率，单位 W/(m K)</span></span>
+<span class="code-line"><i>47</i><span class="code">MP,KXX,2,kgap               </span><span class="comment">! 设置等效间隙导热率，单位 W/(m K)</span></span>
+<span class="code-line"><i>48</i><span class="code">MP,KXX,3,16.0               </span><span class="comment">! 设置包壳导热率，单位 W/(m K)</span></span>
+<span class="code-line"><i>49</i><span class="code">RECTNG,0,rf,0,0.10          </span><span class="comment">! 创建燃料区域</span></span>
+<span class="code-line"><i>50</i><span class="code">AATT,1,,1                   </span><span class="comment">! 为燃料赋予材料1</span></span>
+<span class="code-line"><i>51</i><span class="code">RECTNG,rf,rc_i,0,0.10       </span><span class="comment">! 创建等效间隙薄层</span></span>
+<span class="code-line"><i>52</i><span class="code">AATT,2,,1                   </span><span class="comment">! 为间隙赋予材料2</span></span>
+<span class="code-line"><i>53</i><span class="code">RECTNG,rc_i,4.75e-3,0,0.10  </span><span class="comment">! 创建包壳区域</span></span>
+<span class="code-line"><i>54</i><span class="code">AATT,3,,1                   </span><span class="comment">! 为包壳赋予材料3</span></span>
+<span class="code-line"><i>55</i><span class="code">AGLUE,ALL                   </span><span class="comment">! 合并相邻区域拓扑</span></span>
+<span class="code-line"><i>56</i><span class="code">ESIZE,0.10e-3               </span><span class="comment">! 设置目标网格尺寸</span></span>
+<span class="code-line"><i>57</i><span class="code">AMESH,ALL                   </span><span class="comment">! 划分代表工况网格</span></span>
+<span class="code-line"><i>58</i><span class="code">ASEL,S,LOC,X,0,rf           </span><span class="comment">! 选择燃料区域</span></span>
+<span class="code-line"><i>59</i><span class="code">BFA,ALL,HGEN,2.0e8          </span><span class="comment">! 施加燃料体积热源，单位 W/m^3</span></span>
+<span class="code-line"><i>60</i><span class="code">ALLSEL,ALL                  </span><span class="comment">! 恢复完整选择集</span></span>
+<span class="code-line"><i>61</i><span class="code">LSEL,S,LOC,X,4.75e-3        </span><span class="comment">! 选择包壳外表面</span></span>
+<span class="code-line"><i>62</i><span class="code">SFL,ALL,CONV,2.0e4,580      </span><span class="comment">! 施加冷却剂对流边界</span></span>
+<span class="code-line"><i>63</i><span class="code">ALLSEL,ALL                  </span><span class="comment">! 恢复完整选择集</span></span>
+<span class="code-line"><i>64</i><span class="code">FINISH                      </span><span class="comment">! 完成代表工况前处理</span></span>
+<span class="code-line"><i>65</i><span class="code">/SOLU                       </span><span class="comment">! 进入稳态热求解器</span></span>
+<span class="code-line"><i>66</i><span class="code">ANTYPE,STATIC               </span><span class="comment">! 设置稳态分析</span></span>
+<span class="code-line"><i>67</i><span class="code">SOLVE                       </span><span class="comment">! 求解最后一个参数工况的温度场</span></span>
+<span class="code-line"><i>68</i><span class="code">FINISH                      </span><span class="comment">! 结束第10课参数化算例</span></span></pre></main><footer class="shell">ANSYS APDL 反应堆热工结构每日学习 · 示例用于建模训练和命令理解</footer></body></html>

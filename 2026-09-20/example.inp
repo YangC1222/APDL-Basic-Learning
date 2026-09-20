@@ -1,0 +1,68 @@
+! 第10课：间隙闭合、接触压力与接触热阻参数化；SI单位 m、kg、s、K、Pa
+/CLEAR,NOSTART                 ! 清空数据库，建立参数扫描算例
+/FILNAME,lesson10_scan        ! 设置输出文件名前缀
+/PREP7                        ! 进入前处理器并定义参数
+rf=4.00e-3                    ! 燃料半径，单位 m
+rc_i=4.10e-3                  ! 包壳内半径，单位 m
+gap0=rc_i-rf                  ! 初始径向间隙，单位 m
+tref=293                      ! 参考温度，单位 K
+afuel=10.0e-6                 ! 燃料线膨胀系数，单位 1/K
+aclad=5.5e-6                  ! 包壳线膨胀系数，单位 1/K
+tclad=650                     ! 包壳平均温度，单位 K
+kcontact=2.0e12               ! 教学接触罚刚度，单位 Pa/m
+hopen=2500                    ! 开间隙导热系数，单位 W/(m^2 K)
+hbase=8000                    ! 刚接触时导热系数，单位 W/(m^2 K)
+hslope=2.0e-5                 ! 压力增量换热系数，单位 W/(m^2 K Pa)
+*DIM,scan,ARRAY,6,5           ! 定义6行5列结果数组
+*CFOPEN,lesson10_scan,txt     ! 打开参数扫描结果文件
+*VWRITE                      ! 写入表头；下一行为字符格式
+('Tfuel[K],Gap[m],Pressure[Pa],Hgap[W/m2K],Rth[m2K/W]')
+*DO,ii,1,6,1                 ! 循环六个燃料平均温度工况
+  tfuel=700+(ii-1)*100        ! 设置本次燃料温度，单位 K
+  uf=rf*afuel*(tfuel-tref)    ! 计算燃料自由径向膨胀，单位 m
+  uc=rc_i*aclad*(tclad-tref)  ! 计算包壳自由径向膨胀，单位 m
+  gap=gap0+uc-uf              ! 更新热膨胀后的间隙，单位 m
+  *IF,gap,GT,0,THEN           ! 判断是否保持开间隙
+    pressure=0                ! 开间隙时接触压力为零
+    hgap=hopen                ! 使用开间隙导热系数
+  *ELSE                       ! 进入接触闭合分支
+    penetration=-gap          ! 将负间隙换为几何过盈量，单位 m
+    pressure=kcontact*penetration ! 用教学罚刚度估算接触压力，单位 Pa
+    hgap=hbase+hslope*pressure ! 令接触导热随压力增加
+  *ENDIF                      ! 结束开闭状态分支
+  rth=1/hgap                  ! 计算单位面积接触热阻，单位 m^2 K/W
+  scan(ii,1)=tfuel            ! 保存燃料温度
+  scan(ii,2)=gap              ! 保存剩余间隙或过盈量
+  scan(ii,3)=pressure         ! 保存接触压力
+  scan(ii,4)=hgap             ! 保存界面导热系数
+  scan(ii,5)=rth              ! 保存接触热阻
+  *VWRITE,tfuel,gap,pressure,hgap,rth ! 输出当前工况；下一行为格式
+  (F10.2,',',E16.8,',',E16.8,',',E16.8,',',E16.8)
+*ENDDO                       ! 结束温度参数循环
+*CFCLOS                      ! 关闭结果文件
+ET,1,PLANE55                 ! 定义代表工况的二维热传导单元
+KEYOPT,1,3,1                 ! 设置轴对称热分析
+kgap=hgap*MAX(gap0,1.0e-6)  ! 把最后工况界面导热换算为薄层导热率
+MP,KXX,1,3.0                ! 设置燃料导热率，单位 W/(m K)
+MP,KXX,2,kgap               ! 设置等效间隙导热率，单位 W/(m K)
+MP,KXX,3,16.0               ! 设置包壳导热率，单位 W/(m K)
+RECTNG,0,rf,0,0.10          ! 创建燃料区域
+AATT,1,,1                   ! 为燃料赋予材料1
+RECTNG,rf,rc_i,0,0.10       ! 创建等效间隙薄层
+AATT,2,,1                   ! 为间隙赋予材料2
+RECTNG,rc_i,4.75e-3,0,0.10  ! 创建包壳区域
+AATT,3,,1                   ! 为包壳赋予材料3
+AGLUE,ALL                   ! 合并相邻区域拓扑
+ESIZE,0.10e-3               ! 设置目标网格尺寸
+AMESH,ALL                   ! 划分代表工况网格
+ASEL,S,LOC,X,0,rf           ! 选择燃料区域
+BFA,ALL,HGEN,2.0e8          ! 施加燃料体积热源，单位 W/m^3
+ALLSEL,ALL                  ! 恢复完整选择集
+LSEL,S,LOC,X,4.75e-3        ! 选择包壳外表面
+SFL,ALL,CONV,2.0e4,580      ! 施加冷却剂对流边界
+ALLSEL,ALL                  ! 恢复完整选择集
+FINISH                      ! 完成代表工况前处理
+/SOLU                       ! 进入稳态热求解器
+ANTYPE,STATIC               ! 设置稳态分析
+SOLVE                       ! 求解最后一个参数工况的温度场
+FINISH                      ! 结束第10课参数化算例
