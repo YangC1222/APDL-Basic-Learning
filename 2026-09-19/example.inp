@@ -1,0 +1,57 @@
+! 第9课：燃料—包壳间隙导热与接触状态；SI单位 m、kg、s、K、Pa
+/CLEAR,NOSTART                 ! 清空数据库，建立独立教学算例
+/FILNAME,lesson9_gap          ! 设置输出文件名前缀
+/PREP7                        ! 进入前处理器
+rf=4.00e-3                    ! 燃料初始半径，单位 m
+rc_i=4.10e-3                  ! 包壳内半径，单位 m
+gap0=rc_i-rf                  ! 计算初始径向间隙，单位 m
+tref=293                      ! 几何参考温度，单位 K
+tfuel=1000                    ! 燃料平均温度，单位 K
+tclad=650                     ! 包壳平均温度，单位 K
+afuel=10.0e-6                 ! 燃料线膨胀系数，单位 1/K
+aclad=5.5e-6                  ! 包壳线膨胀系数，单位 1/K
+uf=rf*afuel*(tfuel-tref)      ! 估算燃料自由径向膨胀，单位 m
+uc=rc_i*aclad*(tclad-tref)    ! 估算包壳内表面自由径向膨胀，单位 m
+gap=gap0+uc-uf                ! 计算受热后的径向间隙，正值表示未接触
+*IF,gap,GT,0,THEN             ! 判断燃料与包壳是否仍为开间隙
+  contact_state=0             ! 开间隙状态标记为0
+  hgap=3000                   ! 设置开间隙等效导热系数，单位 W/(m^2 K)
+*ELSE                         ! 进入间隙闭合分支
+  contact_state=1             ! 接触状态标记为1
+  hgap=15000                  ! 设置接触后的等效接触导热系数，单位 W/(m^2 K)
+*ENDIF                        ! 结束接触状态判断
+rmean=(rf+rc_i)/2             ! 计算等效间隙层平均半径，单位 m
+kgap=hgap*MAX(gap0,1.0e-6)   ! 将界面导热换算为等效薄层导热率，单位 W/(m K)
+ET,1,PLANE55                  ! 定义二维轴对称热单元
+KEYOPT,1,3,1                  ! 设置轴对称热分析
+MP,KXX,1,3.0                  ! 设置燃料导热率，单位 W/(m K)
+MP,KXX,2,kgap                 ! 设置等效间隙层导热率，单位 W/(m K)
+MP,KXX,3,16.0                 ! 设置包壳导热率，单位 W/(m K)
+RECTNG,0,rf,0,0.10            ! 创建燃料区域
+AATT,1,,1                     ! 赋予燃料材料
+RECTNG,rf,rc_i,0,0.10         ! 创建等效间隙薄层
+AATT,2,,1                     ! 赋予间隙材料
+RECTNG,rc_i,4.75e-3,0,0.10    ! 创建包壳区域
+AATT,3,,1                     ! 赋予包壳材料
+AGLUE,ALL                     ! 合并区域拓扑以传递热流
+ESIZE,0.10e-3                ! 设置目标网格尺寸
+AMESH,ALL                     ! 划分网格
+ASEL,S,LOC,X,0,rf            ! 选择燃料区域
+BFA,ALL,HGEN,2.0e8           ! 施加燃料体积热源，单位 W/m^3
+ALLSEL,ALL                    ! 恢复完整模型
+LSEL,S,LOC,X,4.75e-3         ! 选择包壳外表面
+SFL,ALL,CONV,2.0e4,580       ! 施加冷却剂对流边界
+ALLSEL,ALL                    ! 恢复完整模型
+FINISH                        ! 完成前处理
+/SOLU                         ! 进入热求解器
+ANTYPE,STATIC                 ! 设置稳态分析
+SOLVE                         ! 求解温度场
+FINISH                        ! 结束求解
+/POST1                        ! 进入后处理
+SET,LAST                      ! 读取最后结果
+PLNSOL,TEMP                  ! 绘制温度云图
+*CFOPEN,lesson9_state,txt     ! 打开接触状态输出文件
+*VWRITE,gap,contact_state,hgap ! 输出间隙、状态和等效导热；下一行为格式
+('Gap [m]=',E16.8,', state=',F4.0,', hgap [W/m2K]=',E16.8)
+*CFCLOS                       ! 关闭输出文件
+FINISH                        ! 结束第9课算例
