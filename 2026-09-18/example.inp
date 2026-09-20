@@ -1,0 +1,40 @@
+! 第8课：燃料—包壳轴对称热工结构模型；SI单位 m、kg、s、K、Pa
+/CLEAR,NOSTART                 ! 清空数据库，建立独立教学算例
+/FILNAME,lesson8_fuel_clad    ! 设置输出文件名前缀
+/PREP7                        ! 进入前处理器
+rf=4.00e-3                    ! 燃料半径，单位 m
+rc_i=4.10e-3                  ! 包壳内半径，单位 m
+rc_o=4.75e-3                  ! 包壳外半径，单位 m
+height=0.10                   ! 教学轴向长度，单位 m
+qv=2.0e8                      ! 燃料体积热源，单位 W/m^3
+hcool=2.0e4                   ! 包壳外表面对流系数，单位 W/(m^2 K)
+tbulk=580                     ! 冷却剂体温，单位 K
+ET,1,PLANE55                  ! 定义二维热传导单元
+KEYOPT,1,3,1                  ! 设置轴对称热分析
+MP,KXX,1,3.0                  ! 燃料等效导热率，单位 W/(m K)
+MP,KXX,2,16.0                 ! 包壳导热率，单位 W/(m K)
+RECTNG,0,rf,0,height          ! 创建燃料r-z截面
+AATT,1,,1                     ! 给燃料区域指定材料1和单元1
+RECTNG,rf,rc_i,0,height       ! 创建等效间隙区域
+AATT,1,,1                     ! 暂用燃料材料建立几何，下一课替换为间隙材料
+RECTNG,rc_i,rc_o,0,height     ! 创建包壳r-z截面
+AATT,2,,1                     ! 给包壳区域指定材料2和单元1
+AGLUE,ALL                     ! 合并相邻区域拓扑以连续传热
+ESIZE,0.15e-3                ! 设置目标网格尺寸，单位 m
+AMESH,ALL                     ! 对全部区域划分网格
+ASEL,S,LOC,X,0,rf            ! 选择燃料区域
+BFA,ALL,HGEN,qv              ! 对燃料施加体积热源
+ALLSEL,ALL                    ! 恢复全部选择集
+LSEL,S,LOC,X,rc_o            ! 选择包壳外圆柱边界
+SFL,ALL,CONV,hcool,tbulk     ! 施加外表面对流边界
+ALLSEL,ALL                    ! 恢复完整模型
+FINISH                        ! 完成前处理
+/SOLU                         ! 进入求解器
+ANTYPE,STATIC                 ! 求解稳态温度场
+SOLVE                         ! 执行热分析
+FINISH                        ! 结束求解
+/POST1                        ! 进入后处理
+SET,LAST                      ! 读取最后结果集
+*GET,tmax,NODE,0,MAX,TEMP    ! 提取全模型最高温度，单位 K
+PLNSOL,TEMP                  ! 绘制温度云图
+FINISH                        ! 结束第8课算例
