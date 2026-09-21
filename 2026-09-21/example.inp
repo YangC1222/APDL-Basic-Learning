@@ -1,0 +1,61 @@
+! 第11课：POD降阶的燃料棒热工结构快照准备；SI单位 m、kg、s、K、Pa
+/CLEAR,NOSTART                 ! 清空数据库，建立独立教学算例
+/FILNAME,lesson11_pod_snapshot ! 设置输出文件名前缀
+/PREP7                         ! 进入前处理器
+rf=4.00e-3                     ! 燃料半径，单位 m
+rc_i=4.10e-3                   ! 包壳内半径，单位 m
+rc_o=4.75e-3                   ! 包壳外半径，单位 m
+height=0.10                    ! 教学轴向长度，单位 m
+qv0=2.0e8                      ! 基准燃料体积热源，单位 W/m^3
+hcool=2.0e4                    ! 外表面对流系数，单位 W/(m^2 K)
+tbulk=580                      ! 冷却剂体温，单位 K
+*DIM,snap,ARRAY,5,4             ! 定义五个快照工况和四个输出量的数组
+*CFOPEN,lesson11_snapshots,txt  ! 打开快照摘要文件
+*VWRITE                       ! 写入快照文件表头；下一行为格式
+('case,qv[W/m3],Tmax[K],Tavg[K],status') ! 写入列名
+*DO,icase,1,5,1                ! 循环五个离线快照工况
+  qv=qv0*(0.80+0.10*(icase-1)) ! 改变功率参数，形成快照样本
+  ET,1,PLANE55                 ! 定义二维热传导单元
+  KEYOPT,1,3,1                 ! 设置轴对称热分析选项
+  MP,KXX,1,3.0                 ! 设置燃料等效导热率，单位 W/(m K)
+  MP,KXX,2,16.0                ! 设置包壳导热率，单位 W/(m K)
+  RECTNG,0,rf,0,height         ! 创建燃料 r-z 截面
+  AATT,1,,1                    ! 给燃料区域指定材料1和单元1
+  RECTNG,rf,rc_i,0,height      ! 创建等效间隙区域
+  AATT,1,,1                    ! 采用教学等效材料表示间隙导热
+  RECTNG,rc_i,rc_o,0,height    ! 创建包壳 r-z 截面
+  AATT,2,,1                    ! 给包壳区域指定材料2和单元1
+  AGLUE,ALL                    ! 合并相邻区域拓扑
+  ESIZE,0.15e-3                ! 设置目标网格尺寸，单位 m
+  AMESH,ALL                    ! 对全部区域划分网格
+  ASEL,S,LOC,X,0,rf            ! 选择燃料区域
+  BFA,ALL,HGEN,qv              ! 施加当前快照的体积热源
+  ALLSEL,ALL                   ! 恢复全部选择集
+  LSEL,S,LOC,X,rc_o            ! 选择包壳外边界
+  SFL,ALL,CONV,hcool,tbulk     ! 施加外表面对流边界
+  ALLSEL,ALL                   ! 恢复完整选择集
+  FINISH                       ! 完成当前快照前处理
+  /SOLU                        ! 进入求解器
+  ANTYPE,STATIC                ! 设置稳态热分析作为快照基准
+  SOLVE                        ! 求解当前快照温度场
+  FINISH                       ! 结束当前快照求解
+  /POST1                       ! 进入后处理器
+  SET,LAST                     ! 读取最后结果集
+  *GET,tmax,NODE,0,MAX,TEMP    ! 提取全模型最高温度，单位 K
+  *GET,tavg,NODE,0,AVER,TEMP   ! 提取节点平均温度，单位 K
+  snap(icase,1)=icase          ! 保存快照编号
+  snap(icase,2)=qv             ! 保存快照功率
+  snap(icase,3)=tmax           ! 保存峰值温度
+  snap(icase,4)=tavg           ! 保存平均温度
+  *VWRITE,icase,qv,tmax,tavg   ! 输出快照摘要供外部POD程序读取
+  (F6.0,',',E16.8,',',F16.4,',',F16.4,',solved') ! 设置摘要格式
+  FINISH                       ! 结束当前快照后处理
+  /CLEAR,NOSTART               ! 清空数据库，避免快照之间累积几何
+*ENDDO                         ! 结束五个快照工况循环
+*CFCLOS                        ! 关闭快照摘要文件
+/POST1                         ! 重新进入后处理器
+*CFOPEN,lesson11_pod_note,txt  ! 创建POD离线—在线说明文件
+*VWRITE                        ! 写入POD处理提示
+('Use lesson11_snapshots.txt as snapshot metadata; compute SVD/POD modes externally.') ! 说明SVD/POD在外部脚本完成
+*CFCLOS                        ! 关闭POD说明文件
+FINISH                         ! 结束第11课算例

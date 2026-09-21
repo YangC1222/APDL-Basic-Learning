@@ -1,0 +1,26 @@
+{
+  "date": "2026-09-21",
+  "lesson": 11,
+  "topic": "POD降阶的燃料棒热工结构快照准备与误差评估",
+  "difficulty": "入门进阶",
+  "commands": [
+    "/CLEAR",
+    "/PREP7",
+    "PLANE55",
+    "KEYOPT",
+    "MP",
+    "RECTNG",
+    "AATT",
+    "AGLUE",
+    "AMESH",
+    "BFA",
+    "SFL",
+    "*DO",
+    "SOLVE",
+    "*GET",
+    "*VWRITE"
+  ],
+  "validation_status": "static_only",
+  "validation_note": "已静态核对SI单位、轴对称热分析流程、五工况快照输出和每条可执行命令的中文行尾注释；POD/SVD在外部后处理中完成，本机未运行MAPDL。",
+  "prerequisite": "第10课"
+}
