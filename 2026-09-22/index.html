@@ -1,0 +1,111 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07131f">
+<title>第 12 课 · POD降阶误差认证与热工结构快照自适应加密</title><style>
+:root{--bg:#06111b;--panel:#0d2130;--paper:#f6faf8;--ink:#102936;--muted:#617681;--cyan:#62e0df;--gold:#ffd166;--line:#dce8e7}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#173f50 0,transparent 35%),var(--bg);color:#e9f7f5;font:16px/1.78 Inter,"PingFang SC","Microsoft YaHei",sans-serif}a{color:inherit}.shell{width:min(1060px,calc(100% - 28px));margin:auto}header{padding:56px 0 36px}.back{color:var(--cyan);text-decoration:none;font-weight:800}.eyebrow{margin-top:30px;color:var(--cyan);font-weight:900;letter-spacing:.13em}h1{font-size:clamp(34px,6vw,62px);line-height:1.12;margin:10px 0}.meta{color:#acc4c9}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}.button{padding:11px 16px;border-radius:999px;background:var(--cyan);color:#06212a;text-decoration:none;font-weight:900}.button.secondary{background:transparent;color:var(--cyan);border:1px solid #2a6170}main{background:var(--paper);color:var(--ink);border-radius:22px 22px 0 0;padding:34px clamp(20px,5vw,64px) 72px}.status{border-left:5px solid var(--gold);background:#fff5d5;padding:12px 16px;border-radius:0 9px 9px 0}figure{margin:28px 0 36px}figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:16px;background:#f4faf9}figcaption{color:var(--muted);font-size:13px;margin-top:8px}h2{font-size:24px;margin:34px 0 10px;color:#0c6870}h3{color:#0c6870}p,li{max-width:850px}code{background:#e4efed;border-radius:5px;padding:2px 5px;color:#0b5f67}.commands{display:flex;gap:7px;flex-wrap:wrap;margin:18px 0 28px}.commands span{background:#dcefed;color:#135d63;border-radius:999px;padding:4px 9px;font:13px Consolas,monospace}blockquote{margin:28px 0;border-left:4px solid #e0a92f;background:#fff7dc;padding:13px 16px}pre{overflow:auto;background:#071621;color:#d8efea;padding:18px 0;border-radius:14px;font:14px/1.65 Consolas,"Microsoft YaHei",monospace}.code-line{display:block;min-width:max-content;padding:0 20px}.code-line:hover{background:#102838}.code-line i{display:inline-block;width:36px;margin-right:16px;color:#52707c;font-style:normal;text-align:right;user-select:none}.code-line .code{color:#d8efea}.code-line .comment{color:#84d7a0}footer{color:#8ba5ac;padding:25px 0 42px}@media(max-width:600px){header{padding-top:34px}main{border-radius:16px 16px 0 0}}
+</style></head><body><header class="shell"><a class="back" href="../">← 返回课程首页</a><div class="eyebrow">2026-09-22 · LESSON 12</div><h1>POD降阶误差认证与热工结构快照自适应加密</h1><p class="meta">难度：进阶 · 前置课程：第11课</p><div class="actions"><a class="button" href="example.inp" download>下载 APDL 示例</a><a class="button secondary" href="model.svg" download>下载模型图</a><a class="button secondary" href="README.md">查看 Markdown 讲义</a></div></header><main class="shell"><p class="status"><strong>验证状态：</strong>已静态检查，尚未运行 MAPDL<br>已静态核对SI单位、轴对称热分析流程、误差阈值判断、POD补样逻辑和每条可执行命令的中文行尾注释；本机未运行MAPDL，tref仅为教学参考参数。</p><figure><img src="model.svg" alt="POD降阶误差认证与热工结构快照自适应加密模型示意图"><figcaption>几何、材料区域、载荷和边界条件与本课 example.inp 对应；示意尺寸以图中标注为准。</figcaption></figure><div class="commands"><span>/CLEAR</span><span>/PREP7</span><span>PLANE55</span><span>KEYOPT</span><span>MP</span><span>RECTNG</span><span>AATT</span><span>AGLUE</span><span>AMESH</span><span>BFA</span><span>SFL</span><span>*DO</span><span>*IF</span><span>SOLVE</span><span>*GET</span><span>*VWRITE</span></div><h2>今日目标</h2>
+<p>在第11课快照生成基础上，增加误差指标和自适应补样逻辑：先用APDL高保真模型检查候选工况，再把超过阈值的工况加入POD/ROM快照库。误差认证和SVD/POD分解在外部后处理中完成，APDL只负责可追溯的高保真数据。</p>
+<h2>物理问题</h2>
+<p>模型采用轴对称燃料—间隙—包壳热传导和外表面对流边界。七个功率工况用于演示离线候选点筛选。<code>tref</code> 是教学参考值，不能替代已验证的高保真基准；正式研究需用独立ANSYS/MAPDL结果、实验数据或经过验证的参考解。</p>
+<h2>关键命令</h2>
+<ul>
+<li><code>*DO</code>：扫描候选参数工况。</li>
+<li><code>*GET</code>：提取峰值温度。</li>
+<li><code>*IF</code>：根据误差阈值标记需要补充快照的工况。</li>
+<li><code>*VWRITE</code>：输出ROM外部程序使用的误差日志。</li>
+</ul>
+<h2>完整脚本</h2>
+<p>下载 [example.inp](example.inp)。每条可执行命令均附中文行尾注释；<code>static_only</code> 表示本机未运行MAPDL。</p>
+<h2>预期结果</h2>
+<p>脚本应输出每个候选工况的峰值温度和相对误差，并标记超过阈值的工况。外部POD/ROM程序应优先用这些工况补充快照，再用未参与建基的工况验证温度、应力、位移和守恒量。</p>
+<h2>POD/ROM工作链</h2>
+<ol>
+<li>生成初始快照并计算POD基。</li>
+<li>在候选工况上运行ROM，记录安全相关输出误差。</li>
+<li>对超过阈值的工况调用高保真APDL模型并补入快照。</li>
+<li>更新POD基，直到误差、外推检测和在线耗时同时满足要求。</li>
+</ol>
+<h2>验证清单</h2>
+<ul>
+<li><code>tref</code> 必须来自独立高保真或实验基准。</li>
+<li>阈值应针对峰值温度、应力和位移分别设定，不能只看平均误差。</li>
+<li>补样工况不能同时作为最终盲验证工况。</li>
+<li>记录网格、单位、材料参数和边界历史，避免误差来源混淆。</li>
+</ul>
+<h2>常见错误</h2>
+<ul>
+<li>把教学参考值当成实验真值。</li>
+<li>只增加训练样本、不报告补样前后的误差变化。</li>
+<li>用同一工况既建POD基又验证ROM，产生数据泄漏。</li>
+</ul>
+<h2>练习</h2>
+<ol>
+<li>将误差指标从峰值温度扩展到包壳热应力和位移。</li>
+<li>比较固定均匀采样与误差驱动自适应采样的高保真计算成本。</li>
+<li>增加冷却剂温度和接触导热系数作为候选参数，并测试外推工况。</li>
+</ol><h2>完整 example.inp（逐行中文注释）</h2><pre><span class="code-line"><i>01</i><span class="code"></span><span class="comment">! 第12课：POD降阶误差认证与热工结构快照自适应加密；SI单位 m、kg、s、K、Pa</span></span>
+<span class="code-line"><i>02</i><span class="code">/CLEAR,NOSTART                 </span><span class="comment">! 清空数据库，建立独立教学算例</span></span>
+<span class="code-line"><i>03</i><span class="code">/FILNAME,lesson12_pod_error   </span><span class="comment">! 设置输出文件名前缀</span></span>
+<span class="code-line"><i>04</i><span class="code">rf=4.00e-3                     </span><span class="comment">! 燃料半径，单位 m</span></span>
+<span class="code-line"><i>05</i><span class="code">rc_i=4.10e-3                   </span><span class="comment">! 包壳内半径，单位 m</span></span>
+<span class="code-line"><i>06</i><span class="code">rc_o=4.75e-3                   </span><span class="comment">! 包壳外半径，单位 m</span></span>
+<span class="code-line"><i>07</i><span class="code">height=0.10                    </span><span class="comment">! 教学轴向长度，单位 m</span></span>
+<span class="code-line"><i>08</i><span class="code">qv0=2.0e8                      </span><span class="comment">! 基准体积热源，单位 W/m^3</span></span>
+<span class="code-line"><i>09</i><span class="code">hcool=2.0e4                   </span><span class="comment">! 外表面对流系数，单位 W/(m^2 K)</span></span>
+<span class="code-line"><i>10</i><span class="code">tbulk=580                      </span><span class="comment">! 冷却剂体温，单位 K</span></span>
+<span class="code-line"><i>11</i><span class="code">tref=1200                      </span><span class="comment">! 参考高保真峰值，用于教学误差指标，单位 K</span></span>
+<span class="code-line"><i>12</i><span class="code">tol=0.02                       </span><span class="comment">! 误差阈值，超过阈值时需要补充快照</span></span>
+<span class="code-line"><i>13</i><span class="code">*DIM,errlog,ARRAY,7,4          </span><span class="comment">! 定义七个候选工况和四列误差日志</span></span>
+<span class="code-line"><i>14</i><span class="code">*CFOPEN,lesson12_error,txt    </span><span class="comment">! 打开误差评估文件</span></span>
+<span class="code-line"><i>15</i><span class="code">*VWRITE                       </span><span class="comment">! 写入误差文件表头；下一行为格式</span></span>
+<span class="code-line"><i>16</i><span class="code">(&#x27;case,qv[W/m3],Tmax[K],relative_error&#x27;) </span><span class="comment">! 写入列名</span></span>
+<span class="code-line"><i>17</i><span class="code">*DO,icase,1,7,1                </span><span class="comment">! 扫描七个功率工况</span></span>
+<span class="code-line"><i>18</i><span class="code">  qv=qv0*(0.70+0.10*(icase-1)) </span><span class="comment">! 设置当前候选工况的功率</span></span>
+<span class="code-line"><i>19</i><span class="code">  /PREP7                       </span><span class="comment">! 进入前处理器建立当前工况模型</span></span>
+<span class="code-line"><i>20</i><span class="code">  ET,1,PLANE55                 </span><span class="comment">! 定义二维热传导单元</span></span>
+<span class="code-line"><i>21</i><span class="code">  KEYOPT,1,3,1                 </span><span class="comment">! 设置轴对称热分析选项</span></span>
+<span class="code-line"><i>22</i><span class="code">  MP,KXX,1,3.0                 </span><span class="comment">! 设置燃料导热率，单位 W/(m K)</span></span>
+<span class="code-line"><i>23</i><span class="code">  MP,KXX,2,16.0                </span><span class="comment">! 设置包壳导热率，单位 W/(m K)</span></span>
+<span class="code-line"><i>24</i><span class="code">  RECTNG,0,rf,0,height         </span><span class="comment">! 创建燃料 r-z 截面</span></span>
+<span class="code-line"><i>25</i><span class="code">  AATT,1,,1                    </span><span class="comment">! 给燃料区域指定材料1和单元1</span></span>
+<span class="code-line"><i>26</i><span class="code">  RECTNG,rf,rc_i,0,height      </span><span class="comment">! 创建等效间隙区域</span></span>
+<span class="code-line"><i>27</i><span class="code">  AATT,1,,1                    </span><span class="comment">! 给间隙区域指定教学等效材料</span></span>
+<span class="code-line"><i>28</i><span class="code">  RECTNG,rc_i,rc_o,0,height    </span><span class="comment">! 创建包壳 r-z 截面</span></span>
+<span class="code-line"><i>29</i><span class="code">  AATT,2,,1                    </span><span class="comment">! 给包壳区域指定材料2和单元1</span></span>
+<span class="code-line"><i>30</i><span class="code">  AGLUE,ALL                    </span><span class="comment">! 合并相邻区域拓扑</span></span>
+<span class="code-line"><i>31</i><span class="code">  ESIZE,0.15e-3                </span><span class="comment">! 设置目标网格尺寸，单位 m</span></span>
+<span class="code-line"><i>32</i><span class="code">  AMESH,ALL                    </span><span class="comment">! 对全部区域划分网格</span></span>
+<span class="code-line"><i>33</i><span class="code">  ASEL,S,LOC,X,0,rf            </span><span class="comment">! 选择燃料区域</span></span>
+<span class="code-line"><i>34</i><span class="code">  BFA,ALL,HGEN,qv              </span><span class="comment">! 施加当前工况体积热源</span></span>
+<span class="code-line"><i>35</i><span class="code">  ALLSEL,ALL                   </span><span class="comment">! 恢复全部选择集</span></span>
+<span class="code-line"><i>36</i><span class="code">  LSEL,S,LOC,X,rc_o            </span><span class="comment">! 选择包壳外边界</span></span>
+<span class="code-line"><i>37</i><span class="code">  SFL,ALL,CONV,hcool,tbulk     </span><span class="comment">! 施加外表面对流边界</span></span>
+<span class="code-line"><i>38</i><span class="code">  ALLSEL,ALL                   </span><span class="comment">! 恢复完整选择集</span></span>
+<span class="code-line"><i>39</i><span class="code">  FINISH                       </span><span class="comment">! 完成当前工况前处理</span></span>
+<span class="code-line"><i>40</i><span class="code">  /SOLU                        </span><span class="comment">! 进入求解器</span></span>
+<span class="code-line"><i>41</i><span class="code">  ANTYPE,STATIC                </span><span class="comment">! 设置稳态热分析</span></span>
+<span class="code-line"><i>42</i><span class="code">  SOLVE                        </span><span class="comment">! 求解当前高保真候选快照</span></span>
+<span class="code-line"><i>43</i><span class="code">  FINISH                       </span><span class="comment">! 结束当前工况求解</span></span>
+<span class="code-line"><i>44</i><span class="code">  /POST1                       </span><span class="comment">! 进入后处理器</span></span>
+<span class="code-line"><i>45</i><span class="code">  SET,LAST                     </span><span class="comment">! 读取最后结果集</span></span>
+<span class="code-line"><i>46</i><span class="code">  *GET,tmax,NODE,0,MAX,TEMP    </span><span class="comment">! 提取当前工况峰值温度，单位 K</span></span>
+<span class="code-line"><i>47</i><span class="code">  relerr=ABS(tmax-tref)/MAX(ABS(tref),1.0) </span><span class="comment">! 计算相对误差指标</span></span>
+<span class="code-line"><i>48</i><span class="code">  errlog(icase,1)=icase        </span><span class="comment">! 保存工况编号</span></span>
+<span class="code-line"><i>49</i><span class="code">  errlog(icase,2)=qv           </span><span class="comment">! 保存工况功率</span></span>
+<span class="code-line"><i>50</i><span class="code">  errlog(icase,3)=tmax         </span><span class="comment">! 保存高保真峰值温度</span></span>
+<span class="code-line"><i>51</i><span class="code">  errlog(icase,4)=relerr       </span><span class="comment">! 保存相对误差指标</span></span>
+<span class="code-line"><i>52</i><span class="code">  *VWRITE,icase,qv,tmax,relerr </span><span class="comment">! 输出误差指标供外部ROM程序筛选</span></span>
+<span class="code-line"><i>53</i><span class="code">  (F6.0,&#x27;,&#x27;,E16.8,&#x27;,&#x27;,F16.4,&#x27;,&#x27;,E16.8) </span><span class="comment">! 设置误差日志格式</span></span>
+<span class="code-line"><i>54</i><span class="code">  *IF,relerr,GT,tol,THEN       </span><span class="comment">! 判断候选工况是否超过误差阈值</span></span>
+<span class="code-line"><i>55</i><span class="code">    *VWRITE,icase              </span><span class="comment">! 输出需要补充快照的工况编号</span></span>
+<span class="code-line"><i>56</i><span class="code">    (&#x27;enrich_case=&#x27;,F6.0)      </span><span class="comment">! 标记自适应加密工况</span></span>
+<span class="code-line"><i>57</i><span class="code">  *ENDIF                       </span><span class="comment">! 结束误差阈值判断</span></span>
+<span class="code-line"><i>58</i><span class="code">  FINISH                       </span><span class="comment">! 结束当前工况后处理</span></span>
+<span class="code-line"><i>59</i><span class="code">  /CLEAR,NOSTART               </span><span class="comment">! 清空数据库，避免工况之间累积几何</span></span>
+<span class="code-line"><i>60</i><span class="code">*ENDDO                         </span><span class="comment">! 结束七个候选工况扫描</span></span>
+<span class="code-line"><i>61</i><span class="code">*CFCLOS                        </span><span class="comment">! 关闭误差日志文件</span></span>
+<span class="code-line"><i>62</i><span class="code">/POST1                         </span><span class="comment">! 进入后处理器说明结果使用方式</span></span>
+<span class="code-line"><i>63</i><span class="code">*CFOPEN,lesson12_rom_note,txt  </span><span class="comment">! 创建ROM在线使用说明文件</span></span>
+<span class="code-line"><i>64</i><span class="code">*VWRITE                        </span><span class="comment">! 写入ROM说明</span></span>
+<span class="code-line"><i>65</i><span class="code">(&#x27;Use lesson12_error.txt to enrich POD snapshots where relative_error exceeds tol.&#x27;) </span><span class="comment">! 说明外部ROM自适应补样逻辑</span></span>
+<span class="code-line"><i>66</i><span class="code">*CFCLOS                        </span><span class="comment">! 关闭ROM说明文件</span></span>
+<span class="code-line"><i>67</i><span class="code">FINISH                         </span><span class="comment">! 结束第12课算例</span></span></pre></main><footer class="shell">ANSYS APDL 反应堆热工结构每日学习 · 示例用于建模训练和命令理解</footer></body></html>
