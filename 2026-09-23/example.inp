@@ -1,0 +1,67 @@
+! 第12课：POD/ROM参数外推与在线安全限值验证；SI单位 m、kg、s、K、Pa
+/CLEAR,NOSTART                 ! 清空数据库，建立独立教学算例
+/FILNAME,lesson13_pod_error   ! 设置输出文件名前缀
+rf=4.00e-3                     ! 燃料半径，单位 m
+rc_i=4.10e-3                   ! 包壳内半径，单位 m
+rc_o=4.75e-3                   ! 包壳外半径，单位 m
+height=0.10                    ! 教学轴向长度，单位 m
+qv0=2.0e8                      ! 基准体积热源，单位 W/m^3
+hcool=2.0e4                   ! 外表面对流系数，单位 W/(m^2 K)
+tbulk=580                      ! 冷却剂体温，单位 K
+tref=1200                      ! 参考高保真峰值，用于教学误差指标，单位 K
+tol=0.02                       ! 误差阈值，超过阈值时需要补充快照
+*DIM,errlog,ARRAY,7,4          ! 定义七个候选工况和四列误差日志
+*CFOPEN,lesson13_error,txt    ! 打开误差评估文件
+*VWRITE                       ! 写入误差文件表头；下一行为格式
+('case,qv[W/m3],Tmax[K],relative_error') ! 写入列名
+*DO,icase,1,7,1                ! 扫描七个功率工况
+  qv=qv0*(0.70+0.10*(icase-1)) ! 设置当前候选工况的功率
+  /PREP7                       ! 进入前处理器建立当前工况模型
+  ET,1,PLANE55                 ! 定义二维热传导单元
+  KEYOPT,1,3,1                 ! 设置轴对称热分析选项
+  MP,KXX,1,3.0                 ! 设置燃料导热率，单位 W/(m K)
+  MP,KXX,2,16.0                ! 设置包壳导热率，单位 W/(m K)
+  RECTNG,0,rf,0,height         ! 创建燃料 r-z 截面
+  AATT,1,,1                    ! 给燃料区域指定材料1和单元1
+  RECTNG,rf,rc_i,0,height      ! 创建等效间隙区域
+  AATT,1,,1                    ! 给间隙区域指定教学等效材料
+  RECTNG,rc_i,rc_o,0,height    ! 创建包壳 r-z 截面
+  AATT,2,,1                    ! 给包壳区域指定材料2和单元1
+  AGLUE,ALL                    ! 合并相邻区域拓扑
+  ESIZE,0.15e-3                ! 设置目标网格尺寸，单位 m
+  AMESH,ALL                    ! 对全部区域划分网格
+  ASEL,S,LOC,X,0,rf            ! 选择燃料区域
+  BFA,ALL,HGEN,qv              ! 施加当前工况体积热源
+  ALLSEL,ALL                   ! 恢复全部选择集
+  LSEL,S,LOC,X,rc_o            ! 选择包壳外边界
+  SFL,ALL,CONV,hcool,tbulk     ! 施加外表面对流边界
+  ALLSEL,ALL                   ! 恢复完整选择集
+  FINISH                       ! 完成当前工况前处理
+  /SOLU                        ! 进入求解器
+  ANTYPE,STATIC                ! 设置稳态热分析
+  SOLVE                        ! 求解当前高保真候选快照
+  FINISH                       ! 结束当前工况求解
+  /POST1                       ! 进入后处理器
+  SET,LAST                     ! 读取最后结果集
+  *GET,tmax,NODE,0,MAX,TEMP    ! 提取当前工况峰值温度，单位 K
+  relerr=ABS(tmax-tref)/MAX(ABS(tref),1.0) ! 计算相对误差指标
+  errlog(icase,1)=icase        ! 保存工况编号
+  errlog(icase,2)=qv           ! 保存工况功率
+  errlog(icase,3)=tmax         ! 保存高保真峰值温度
+  errlog(icase,4)=relerr       ! 保存相对误差指标
+  *VWRITE,icase,qv,tmax,relerr ! 输出误差指标供外部ROM程序筛选
+  (F6.0,',',E16.8,',',F16.4,',',E16.8) ! 设置误差日志格式
+  *IF,relerr,GT,tol,THEN       ! 判断候选工况是否超过误差阈值
+    *VWRITE,icase              ! 输出需要补充快照的工况编号
+    ('enrich_case=',F6.0)      ! 标记自适应加密工况
+  *ENDIF                       ! 结束误差阈值判断
+  FINISH                       ! 结束当前工况后处理
+  /CLEAR,NOSTART               ! 清空数据库，避免工况之间累积几何
+*ENDDO                         ! 结束七个候选工况扫描
+*CFCLOS                        ! 关闭误差日志文件
+/POST1                         ! 进入后处理器说明结果使用方式
+*CFOPEN,lesson13_rom_note,txt  ! 创建ROM在线使用说明文件
+*VWRITE                        ! 写入ROM说明
+('Use lesson13_error.txt to enrich POD snapshots where relative_error exceeds tol.') ! 说明外部ROM自适应补样逻辑
+*CFCLOS                        ! 关闭ROM说明文件
+FINISH                         ! 结束第12课算例
