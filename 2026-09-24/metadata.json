@@ -1,0 +1,27 @@
+{
+  "date": "2026-09-24",
+  "lesson": 14,
+  "topic": "POD/ROM安全壳热边界与结构响应盲验证",
+  "difficulty": "进阶",
+  "commands": [
+    "/CLEAR",
+    "/PREP7",
+    "PLANE55",
+    "KEYOPT",
+    "MP",
+    "RECTNG",
+    "AATT",
+    "AGLUE",
+    "AMESH",
+    "BFA",
+    "SFL",
+    "*DO",
+    "*IF",
+    "SOLVE",
+    "*GET",
+    "*VWRITE"
+  ],
+  "validation_status": "static_only",
+  "validation_note": "已静态核对SI单位、轴对称热分析流程、误差阈值判断、POD补样逻辑和每条可执行命令的中文行尾注释；本机未运行MAPDL，tref仅为教学参考参数。",
+  "prerequisite": "第11课"
+}
