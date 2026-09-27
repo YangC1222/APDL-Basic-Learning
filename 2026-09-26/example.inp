@@ -1,0 +1,38 @@
+! 第16课：控制棒包壳轴对称热膨胀与内压，SI单位 m、kg、s、K、Pa
+/CLEAR,NOSTART                 ! 清空数据库，避免继承其他模型
+/FILNAME,lesson16_rod_clad     ! 设置独立结果文件名前缀
+ri=5.00e-3                     ! 控制棒包壳内半径，单位 m，教学假设
+ro=5.60e-3                     ! 控制棒包壳外半径，单位 m，教学假设
+len=0.10                       ! 轴向建模长度，单位 m，教学假设
+press=5.0e6                   ! 内压，单位 Pa，教学假设
+tref0=300                      ! 无热应变参考温度，单位 K
+top0=650                       ! 均匀运行温度，单位 K，非实际堆设计值
+/PREP7                         ! 进入前处理器
+ET,1,PLANE182                  ! 定义二维结构实体单元
+KEYOPT,1,3,1                   ! 选择绕全局Y轴旋转的轴对称分析
+MP,EX,1,1.9e11                 ! 材料弹性模量，单位 Pa，教学常数
+MP,PRXY,1,0.30                 ! 材料泊松比，无量纲
+MP,ALPX,1,1.6e-5               ! 线膨胀系数，单位 1/K，教学常数
+RECTNG,ri,ro,0,len             ! 建立包壳r-z截面，X为半径、Y为轴向
+AATT,1,,1                      ! 给唯一面积指定材料1和单元1
+ESIZE,0.10e-3                  ! 目标网格尺度，单位 m
+AMESH,ALL                      ! 网格化包壳截面
+TREF,tref0                     ! 设置热应变参考温度
+TUNIF,top0                     ! 给全部节点施加均匀温度，形成热膨胀
+LSEL,S,LOC,X,ri                ! 仅选择包壳内半径边线
+SFL,ALL,PRES,press             ! 给内表面施加正值压力；运行时核对法向
+ALLSEL,ALL                     ! 恢复全部实体选择
+NSEL,S,LOC,Y,0                 ! 选中底部一圈节点
+D,ALL,UY,0                     ! 约束轴向位移，教学中假设刚性底端
+ALLSEL,ALL                     ! 恢复全部节点选择
+FINISH                         ! 结束前处理
+/SOLU                          ! 进入结构静力求解器
+ANTYPE,STATIC                  ! 指定静力分析
+SOLVE                          ! 求解温升与内压组合载荷
+FINISH                         ! 结束求解器
+/POST1                         ! 进入结果后处理器
+SET,LAST                       ! 读取最后一个结果集
+PLNSOL,U,X                     ! 绘制径向位移云图，单位 m
+PLNSOL,S,EQV                   ! 绘制等效应力云图，单位 Pa
+PRNSOL,S,COMP                  ! 列出结构应力各分量供核验
+FINISH                         ! 结束后处理器

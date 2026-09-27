@@ -1,0 +1,25 @@
+{
+  "date": "2026-09-26",
+  "lesson": 16,
+  "topic": "控制棒包壳的热膨胀、热应力与内压组合载荷",
+  "difficulty": "进阶",
+  "commands": [
+    "/CLEAR",
+    "/PREP7",
+    "ET",
+    "KEYOPT",
+    "MP",
+    "RECTNG",
+    "AATT",
+    "AMESH",
+    "TREF",
+    "TUNIF",
+    "SFL",
+    "D",
+    "SOLVE",
+    "PLNSOL"
+  ],
+  "validation_status": "static_only",
+  "validation_note": "已静态检查脚本、单位和注释；本机未运行 MAPDL。第17课为几何风险初筛，不是接触有限元验证。",
+  "prerequisite": "第15课"
+}
