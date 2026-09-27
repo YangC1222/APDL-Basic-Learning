@@ -1,0 +1,22 @@
+{
+  "date": "2026-09-27",
+  "lesson": 17,
+  "topic": "控制棒—导向管间隙、接触与卡涩裕量：几何初筛",
+  "difficulty": "进阶",
+  "commands": [
+    "/CLEAR",
+    "*CFOPEN",
+    "*DO",
+    "*IF",
+    "*VWRITE",
+    "/PREP7",
+    "PLANE182",
+    "TREF",
+    "TUNIF",
+    "SOLVE",
+    "PLNSOL"
+  ],
+  "validation_status": "static_only",
+  "validation_note": "已静态检查脚本、单位和注释；本机未运行 MAPDL。第17课为几何风险初筛，不是接触有限元验证。",
+  "prerequisite": "第16课"
+}

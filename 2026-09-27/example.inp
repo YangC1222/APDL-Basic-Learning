@@ -1,0 +1,53 @@
+! 第17课：控制棒—导向管热膨胀间隙初筛；SI单位 m、K；不是接触有限元求解
+/CLEAR,NOSTART                 ! 清空数据库以隔离参数算例
+/FILNAME,lesson17_gap_screen   ! 设置结果文件名前缀
+r_rod0=5.60e-3                 ! 控制棒外半径基准值，单位 m
+r_tube0=5.90e-3                ! 导向管内半径基准值，单位 m
+a_rod=1.6e-5                  ! 控制棒等效线膨胀系数，单位 1/K
+a_tube=1.2e-5                 ! 导向管等效线膨胀系数，单位 1/K
+t_ref=300                     ! 半径测量参考温度，单位 K
+t_tube=500                    ! 导向管温度，单位 K，教学假设
+bow=0.10e-3                   ! 预留弯曲/偏心径向占用，单位 m
+tol=0.05e-3                   ! 预留制造公差径向占用，单位 m
+*CFOPEN,lesson17_gap,csv      ! 新建参数扫描结果文件
+*VWRITE                       ! 输出CSV字段名称；下一行为纯格式
+('case,T_rod_K,clearance_m,margin_m,flag')
+*DO,icase,1,6,1                ! 遍历六个控制棒温度候选工况
+  t_rod=500+50*(icase-1)       ! 设置本工况控制棒温度，单位 K
+  r_rod=r_rod0*(1+a_rod*(t_rod-t_ref)) ! 计算自由热膨胀后的控制棒半径，单位 m
+  r_tube=r_tube0*(1+a_tube*(t_tube-t_ref)) ! 计算导向管内半径，单位 m
+  clearance=r_tube-r_rod       ! 计算不含弯曲、公差的几何径向间隙，单位 m
+  margin=clearance-bow-tol     ! 扣除弯曲和公差占用后的初筛裕量，单位 m
+  flag=0                       ! 默认标记为未发现几何闭合
+  *IF,margin,LE,0,THEN         ! 若初筛裕量不大于零，进入接触风险分支
+    flag=1                     ! 标记几何闭合风险；不代表已算出摩擦卡涩力
+  *ENDIF                       ! 结束几何风险条件判断
+  *VWRITE,icase,t_rod,clearance,margin,flag ! 写出一行扫描结果；下一行为纯格式
+  (I2,',',F8.1,',',E13.6,',',E13.6,',',I1)
+*ENDDO                         ! 结束六个温度工况的扫描
+*CFCLOS                        ! 关闭CSV文件并保存扫描记录
+/PREP7                         ! 进入前处理，建立单一温度工况的自由膨胀对照模型
+ET,1,PLANE182                  ! 定义二维结构实体单元
+KEYOPT,1,3,1                   ! 指定绕Y轴的轴对称分析
+MP,EX,1,1.9e11                 ! 教学弹性模量，单位 Pa
+MP,PRXY,1,0.30                 ! 教学泊松比，无量纲
+MP,ALPX,1,a_rod                ! 采用上文控制棒线膨胀系数，单位 1/K
+RECTNG,0,r_rod0,0,0.10         ! 建立实心教学棒的r-z截面，长度0.10 m
+AATT,1,,1                      ! 为面积指定材料1、单元1
+ESIZE,0.50e-3                  ! 设置教学网格尺寸，单位 m
+AMESH,ALL                      ! 对实心棒截面划分网格
+TREF,t_ref                     ! 设置热应变参考温度
+TUNIF,t_tube                   ! 将教学棒统一升至500 K，用于对照热膨胀
+NSEL,S,LOC,Y,0                 ! 选择底部节点作为轴向位移参考
+D,ALL,UY,0                     ! 约束底端轴向位移以去除轴向刚体运动
+ALLSEL,ALL                     ! 恢复所有节点选择
+FINISH                         ! 结束前处理
+/SOLU                          ! 进入求解器
+ANTYPE,STATIC                  ! 设置静力热膨胀对照分析
+SOLVE                          ! 求解单一温度工况的自由膨胀
+FINISH                         ! 结束求解器
+/POST1                         ! 进入结果后处理
+SET,LAST                       ! 读取最后结果集
+PLNSOL,U,X                     ! 查看棒外表面径向位移，检查解析近似
+FINISH                         ! 完成后处理
+/COM,Screening model has no contact pair ! 声明此有限元对照模型没有接触对
