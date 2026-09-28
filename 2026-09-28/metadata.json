@@ -16,7 +16,8 @@
     "PRRSOL",
     "PRESOL,CONT"
   ],
-  "validation_status": "solver_verified_with_warnings",
+  "validation_status": "solved",
+  "validation_warnings": "基线2条、细网格3条警告；接触刚度与网格收敛仍需后续验证。",
   "validation_note": "MAPDL 2023 R1 在隔离目录完成基线、无摩擦和细网格三组求解，均0错误；基线反力比0.1999949，无摩擦切向反力接近零。细网格切向反力增加约2.98%，且出现接触刚度警告，尚未证明完全网格收敛。详见教程和verification日志。",
   "prerequisite": "第17课",
   "solver_version": "MAPDL 2023 R1 (23.1)",
