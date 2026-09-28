@@ -1,0 +1,50 @@
+{
+  "date": "2026-09-28",
+  "lesson": 18,
+  "topic": "控制棒插入/提出的摩擦接触简化模型",
+  "difficulty": "进阶",
+  "commands": [
+    "PLANE183",
+    "TARGE169",
+    "CONTA172",
+    "ESURF",
+    "MP,MU",
+    "NLGEOM",
+    "AUTOTS",
+    "D",
+    "SOLVE",
+    "PRRSOL",
+    "PRESOL,CONT"
+  ],
+  "validation_status": "solver_verified_with_warnings",
+  "validation_note": "MAPDL 2023 R1 在隔离目录完成基线、无摩擦和细网格三组求解，均0错误；基线反力比0.1999949，无摩擦切向反力接近零。细网格切向反力增加约2.98%，且出现接触刚度警告，尚未证明完全网格收敛。详见教程和verification日志。",
+  "prerequisite": "第17课",
+  "solver_version": "MAPDL 2023 R1 (23.1)",
+  "validation_results": {
+    "baseline": {
+      "fx_per_width": 175253.1939,
+      "fy_per_width": -876288.3857,
+      "abs_force_ratio": 0.1999948838,
+      "mu": 0.2,
+      "error_count": 0,
+      "warning_count": 2
+    },
+    "mu0": {
+      "fx_per_width": 2.439492164e-08,
+      "fy_per_width": -871368.9237,
+      "abs_force_ratio": 2.799608865e-14,
+      "mu": 0.0,
+      "error_count": 0,
+      "warning_count": 2
+    },
+    "fine": {
+      "fx_per_width": 180479.1465,
+      "fy_per_width": -902411.489,
+      "abs_force_ratio": 0.1999965079,
+      "mu": 0.2,
+      "error_count": 0,
+      "warning_count": 3
+    },
+    "mesh_fx_relative_change": 0.02981944285124949
+  }
+}
