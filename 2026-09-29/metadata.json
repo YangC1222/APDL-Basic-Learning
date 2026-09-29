@@ -1,0 +1,100 @@
+{
+  "date": "2026-09-29",
+  "lesson": 19,
+  "topic": "控制棒组件的热预应力模态分析",
+  "difficulty": "进阶",
+  "commands": [
+    "BEAM188",
+    "SECTYPE",
+    "TREF",
+    "BF,TEMP",
+    "PSTRES",
+    "MODOPT",
+    "MXPAND",
+    "*GET,MODE"
+  ],
+  "validation_status": "solved",
+  "validation_note": "MAPDL 2023 R1在隔离目录完成40/80单元和零温升三组求解；均0错误、0警告，反力平衡及Euler梁解析对照通过。",
+  "prerequisite": "第18课",
+  "validation_results": {
+    "solver": "MAPDL 2023 R1 / 23.1",
+    "validation_status": "solved",
+    "runs": {
+      "baseline": [
+        {
+          "case": 1.0,
+          "T_C": 20.0,
+          "Rx_left_N": 0.0,
+          "f1_Hz": 178.5603366,
+          "f2_Hz": 708.6046475,
+          "f3_Hz": 1574.023379,
+          "EB_f1_Hz": 179.0394521,
+          "EB_Pcr_N": 100011.9913
+        },
+        {
+          "case": 2.0,
+          "T_C": 40.0,
+          "Rx_left_N": 18240.0,
+          "f1_Hz": 161.3854429,
+          "f2_Hz": 691.9931589,
+          "f3_Hz": 1557.404347,
+          "EB_f1_Hz": 179.0394521,
+          "EB_Pcr_N": 100011.9913
+        }
+      ],
+      "fine": [
+        {
+          "case": 1.0,
+          "T_C": 20.0,
+          "Rx_left_N": 0.0,
+          "f1_Hz": 178.5603373,
+          "f2_Hz": 708.6046576,
+          "f3_Hz": 1574.023425,
+          "EB_f1_Hz": 179.0394521,
+          "EB_Pcr_N": 100011.9913
+        },
+        {
+          "case": 2.0,
+          "T_C": 40.0,
+          "Rx_left_N": 18240.0,
+          "f1_Hz": 161.3854436,
+          "f2_Hz": 691.9931692,
+          "f3_Hz": 1557.404394,
+          "EB_f1_Hz": 179.0394521,
+          "EB_Pcr_N": 100011.9913
+        }
+      ],
+      "zero_delta": [
+        {
+          "case": 1.0,
+          "T_C": 20.0,
+          "Rx_left_N": 0.0,
+          "f1_Hz": 178.5603366,
+          "f2_Hz": 708.6046475,
+          "f3_Hz": 1574.023379,
+          "EB_f1_Hz": 179.0394521,
+          "EB_Pcr_N": 100011.9913
+        },
+        {
+          "case": 2.0,
+          "T_C": 20.0,
+          "Rx_left_N": 0.0,
+          "f1_Hz": 178.5603366,
+          "f2_Hz": 708.6046475,
+          "f3_Hz": 1574.023379,
+          "EB_f1_Hz": 179.0394521,
+          "EB_Pcr_N": 100011.9913
+        }
+      ]
+    },
+    "errors": 0,
+    "warnings": 0,
+    "max_mesh_frequency_change_percent": 3.017841843089286e-06,
+    "euler_bernoulli_f1_cold_hz": 179.0394521,
+    "euler_bernoulli_f1_hot_hz": 161.89185144301132,
+    "thermal_compression_n": 18240,
+    "ideal_euler_buckling_n": 100011.9913,
+    "reaction_balance_residual_n": -2.1828e-11,
+    "limitations": "均质梁教学设置；未包含真实控制棒复合截面、支承接触、流体附加质量、材料温度依赖或屈曲后非线性。"
+  }
+}
