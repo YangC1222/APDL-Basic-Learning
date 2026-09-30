@@ -1,0 +1,28 @@
+{
+  "date": "2026-09-30",
+  "lesson": 20,
+  "topic": "控制棒与导向管的谐响应及流致振动等效载荷",
+  "difficulty": "进阶",
+  "commands": [
+    "BEAM188",
+    "SECTYPE",
+    "MP,DENS",
+    "ANTYPE,HARMIC",
+    "HROPT,FULL",
+    "DMPRAT",
+    "HARFRQ",
+    "NSUBST",
+    "NSOL",
+    "PRCPLX",
+    "PRVAR"
+  ],
+  "validation_status": "static_only",
+  "validation_note": "脚本、单位、注释、SVG及Ansys命令参考已静态检查；隔离MAPDL求解尝试在获取许可证前停止（1055@localhost，FlexNet -97,121），未得到数值结果。",
+  "prerequisite": "第19课：控制棒组件的热预应力模态分析",
+  "model_assumptions": [
+    "等效均质铰支梁",
+    "10 N中点简谐力为教学假设",
+    "2%阻尼为教学假设",
+    "未考虑真实流体附加质量或导向管接触"
+  ]
+}
