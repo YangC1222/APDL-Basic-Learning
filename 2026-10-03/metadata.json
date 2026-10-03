@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-03",
+  "lesson": 23,
+  "topic": "板型燃料元件的温度场与板弯曲",
+  "difficulty": "进阶",
+  "commands": [
+    "SOLID70",
+    "SOLID185",
+    "ETCHG",
+    "LDREAD",
+    "TREF",
+    "NLGEOM"
+  ],
+  "validation_status": "solved",
+  "validation_note": "Ansys MAPDL 2023 R1在本课validation隔离目录完成求解，返回码0、错误0。教学结果并非工程安全验证；尚未完成网格独立性及实测对照。热结果温度范围550.0–650.0 K；Z位移范围-2.7489–0.0010 mm。结构子步收敛。存在1条ETCHG标准转换提醒，已核对转换为SOLID185、材料、温度传递和结构约束；未消除根部约束敏感性。",
+  "prerequisite": "第22课",
+  "model_assumptions": "100×30×2 mm均质等效板，下表面550 K、上表面650 K、侧面绝热，根部固支。材料为教学常数，不建真实燃料—包壳多层。零体热源的定温模型用于检验温度传递和弯曲，不替代发热燃料热设计。",
+  "references": [
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_cmd/Hlp_C_ETCHG.html",
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_cmd/Hlp_C_LDREAD.html"
+  ],
+  "validated_at": "2026-10-03T16:46:05.932370+00:00"
+}
