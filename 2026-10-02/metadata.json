@@ -1,0 +1,22 @@
+{
+  "date": "2026-10-02",
+  "lesson": 22,
+  "topic": "燃料组件热变形与流道变化的参数迭代",
+  "difficulty": "进阶",
+  "commands": [
+    "PLANE182",
+    "BF",
+    "TREF",
+    "*DO",
+    "*GET",
+    "*VWRITE"
+  ],
+  "validation_status": "solved",
+  "validation_note": "Ansys MAPDL 2023 R1在本课validation隔离目录完成求解，返回码0、错误0。教学结果并非工程安全验证；尚未完成网格独立性及实测对照。跨板温差2、4、6 K时，最小流道宽度分别为2.7095, 2.4189, 2.1284 mm。无警告；仍是指定温度的小变形模型。",
+  "prerequisite": "第21课",
+  "model_assumptions": "两条长0.40 m、宽4 mm的平面应力等效板条，中间初始流道3 mm，底边固支，厚度方向按单位深度。温度场是指定教学输入，不代表真实燃料热解。相反温度梯度驱动相向弯曲。没有接触与流动方程，不声称双向热流固耦合。",
+  "references": [
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_elem/Hlp_E_PLANE182.html"
+  ],
+  "validated_at": "2026-10-03T16:46:05.908340+00:00"
+}

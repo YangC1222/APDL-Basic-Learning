@@ -1,0 +1,191 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07131f">
+<title>第 22 课 · 燃料组件热变形与流道变化的参数迭代</title><style>
+:root{--bg:#06111b;--panel:#0d2130;--paper:#f6faf8;--ink:#102936;--muted:#617681;--cyan:#62e0df;--gold:#ffd166;--line:#dce8e7}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#173f50 0,transparent 35%),var(--bg);color:#e9f7f5;font:16px/1.78 Inter,"PingFang SC","Microsoft YaHei",sans-serif}a{color:inherit}.shell{width:min(1060px,calc(100% - 28px));margin:auto}header{padding:56px 0 36px}.back{color:var(--cyan);text-decoration:none;font-weight:800}.eyebrow{margin-top:30px;color:var(--cyan);font-weight:900;letter-spacing:.13em}h1{font-size:clamp(34px,6vw,62px);line-height:1.12;margin:10px 0}.meta{color:#acc4c9}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}.button{padding:11px 16px;border-radius:999px;background:var(--cyan);color:#06212a;text-decoration:none;font-weight:900}.button.secondary{background:transparent;color:var(--cyan);border:1px solid #2a6170}main{background:var(--paper);color:var(--ink);border-radius:22px 22px 0 0;padding:34px clamp(20px,5vw,64px) 72px}.status{border-left:5px solid var(--gold);background:#fff5d5;padding:12px 16px;border-radius:0 9px 9px 0}figure{margin:28px 0 36px}figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:16px;background:#f4faf9}figcaption{color:var(--muted);font-size:13px;margin-top:8px}h2{font-size:24px;margin:34px 0 10px;color:#0c6870}h3{color:#0c6870}p,li{max-width:850px}code{background:#e4efed;border-radius:5px;padding:2px 5px;color:#0b5f67}.commands{display:flex;gap:7px;flex-wrap:wrap;margin:18px 0 28px}.commands span{background:#dcefed;color:#135d63;border-radius:999px;padding:4px 9px;font:13px Consolas,monospace}blockquote{margin:28px 0;border-left:4px solid #e0a92f;background:#fff7dc;padding:13px 16px}pre{overflow:auto;background:#071621;color:#d8efea;padding:18px 0;border-radius:14px;font:14px/1.65 Consolas,"Microsoft YaHei",monospace}.code-line{display:block;min-width:max-content;padding:0 20px}.code-line:hover{background:#102838}.code-line i{display:inline-block;width:36px;margin-right:16px;color:#52707c;font-style:normal;text-align:right;user-select:none}.code-line .code{color:#d8efea}.code-line .comment{color:#84d7a0}footer{color:#8ba5ac;padding:25px 0 42px}@media(max-width:600px){header{padding-top:34px}main{border-radius:16px 16px 0 0}}
+</style></head><body><header class="shell"><a class="back" href="../">← 返回课程首页</a><div class="eyebrow">2026-10-02 · LESSON 22</div><h1>燃料组件热变形与流道变化的参数迭代</h1><p class="meta">难度：进阶 · 前置课程：第21课</p><div class="actions"><a class="button" href="example.inp" download>下载 APDL 示例</a><a class="button secondary" href="model.svg" download>下载模型图</a><a class="button secondary" href="README.md">查看 Markdown 讲义</a></div></header><main class="shell"><p class="status"><strong>验证状态：</strong>已通过 MAPDL 求解<br>Ansys MAPDL 2023 R1在本课validation隔离目录完成求解，返回码0、错误0。教学结果并非工程安全验证；尚未完成网格独立性及实测对照。跨板温差2、4、6 K时，最小流道宽度分别为2.7095, 2.4189, 2.1284 mm。无警告；仍是指定温度的小变形模型。</p><figure><img src="model.svg" alt="燃料组件热变形与流道变化的参数迭代模型示意图"><figcaption>几何、材料区域、载荷和边界条件与本课 example.inp 对应；示意尺寸以图中标注为准。</figcaption></figure><div class="commands"><span>PLANE182</span><span>BF</span><span>TREF</span><span>*DO</span><span>*GET</span><span>*VWRITE</span></div><p>2026-10-02</p>
+<h2>今日目标</h2>
+<p>对指定横向温差扫描，计算两个板条向流道弯曲后的最小间距。</p>
+<h2>物理问题</h2>
+<p>两条长0.40 m、宽4 mm的平面应力等效板条，中间初始流道3 mm，底边固支，厚度方向按单位深度。温度场是指定教学输入，不代表真实燃料热解。相反温度梯度驱动相向弯曲。没有接触与流动方程，不声称双向热流固耦合。</p>
+<h2>关键命令</h2>
+<ul>
+<li>**PLANE182**：二维结构单元默认平面应力，四节点按逆时针排列。</li>
+<li>**TREF/MP,ALPX**：规定热应变零点与膨胀系数。</li>
+<li>**BF,TEMP**：按节点宽度位置指定温度，不是温度约束。</li>
+<li>***DO**：以2、4、6 K跨宽温差重复求解，所有节点载荷覆盖更新。</li>
+<li>***GET,U,X**：在相同高度提取两相对表面位移，局部间距为g0+ur-ul。</li>
+<li>***VWRITE**：逐工况导出最小间距，格式行必须紧邻。</li>
+</ul>
+<h2>完整脚本</h2>
+<p>```apdl</p>
+<p>/CLEAR,NOSTART                 ! 独立模型；SI单位m、N、K、Pa</p>
+<p>/FILNAME,lesson22               ! 设置本课输出前缀</p>
+<p>/PREP7                         ! 进入前处理</p>
+<p>length0=0.40                   ! 两个等效板条长度m</p>
+<p>width0=0.004                   ! 板条宽度m，沿X模拟热梯度</p>
+<p>gap0=0.003                     ! 初始流道间距m</p>
+<p>ny0=40                        ! 轴向单元数</p>
+<p>nx0=4                         ! 宽度方向单元数</p>
+<p>ET,1,PLANE182                  ! 二维四节点结构单元，默认平面应力</p>
+<p>MP,EX,1,1.9e11                 ! 教学弹性模量Pa</p>
+<p>MP,PRXY,1,0.30                 ! 泊松比</p>
+<p>MP,ALPX,1,1.2e-5               ! 线膨胀系数1/K</p>
+<p>TREF,550                       ! 无热应变参考温度K</p>
+<p>*DO,ir,1,2                     ! 分别创建左右两根等效板条</p>
+<p>base0=(ir-1)*10000             ! 为右板条分配独立节点编号</p>
+<p>xbase0=(ir-1)*(width0+gap0)     ! 板条左边缘坐标m</p>
+<p>*DO,jj,0,ny0                   ! 轴向节点循环</p>
+<p>*DO,ii,0,nx0                   ! 宽度节点循环</p>
+<p>nid0=base0+jj*(nx0+1)+ii+1     ! 结构化节点编号</p>
+<p>N,nid0,xbase0+width0*ii/nx0,length0*jj/ny0 ! 节点坐标m</p>
+<p>*ENDDO                         ! 结束宽度节点循环</p>
+<p>*ENDDO                         ! 结束轴向节点循环</p>
+<p>*DO,jj,0,ny0-1                 ! 轴向单元循环</p>
+<p>*DO,ii,0,nx0-1                 ! 宽度单元循环</p>
+<p>nid0=base0+jj*(nx0+1)+ii+1     ! 当前单元左下节点</p>
+<p>E,nid0,nid0+1,nid0+nx0+2,nid0+nx0+1 ! 逆时针创建四节点单元</p>
+<p>*ENDDO                         ! 结束宽度单元循环</p>
+<p>*ENDDO                         ! 结束轴向单元循环</p>
+<p>*ENDDO                         ! 完成两根板条</p>
+<p>NSEL,S,LOC,Y,0                 ! 选底边节点</p>
+<p>D,ALL,ALL,0                    ! 底边固支，抑制刚体运动</p>
+<p>ALLSEL,ALL                     ! 恢复完整模型</p>
+<p>FINISH                         ! 完成前处理</p>
+<p>*CFOPEN,channel_scan,csv        ! 打开参数扫描结果</p>
+<p>*DO,icase,1,3                  ! 三个热梯度工况</p>
+<p>dtemp0=2*icase                 ! 跨板条温差为2、4、6 K</p>
+<p>/SOLU                          ! 开始当前工况</p>
+<p>ANTYPE,STATIC                  ! 线性静力热变形</p>
+<p>NLGEOM,OFF                     ! 小变形；不计算接触或流动反馈</p>
+<p>*DO,ir,1,2                     ! 两条板分别施加相反温度梯度</p>
+<p>base0=(ir-1)*10000             ! 当前板节点编号起点</p>
+<p>sign0=2*ir-3                   ! 左板负梯度，右板正梯度，向流道弯曲</p>
+<p>*DO,jj,0,ny0                   ! 遍历轴向节点</p>
+<p>*DO,ii,0,nx0                   ! 遍历宽度节点</p>
+<p>nid0=base0+jj*(nx0+1)+ii+1     ! 当前节点</p>
+<p>temp0=550+sign0*dtemp0*(ii/nx0-0.5) ! 指定线性温度场K，非热分析结果</p>
+<p>BF,nid0,TEMP,temp0             ! 节点热膨胀载荷</p>
+<p>*ENDDO                         ! 结束宽度载荷循环</p>
+<p>*ENDDO                         ! 结束轴向载荷循环</p>
+<p>*ENDDO                         ! 完成两块板载荷</p>
+<p>SOLVE                          ! 求解当前静力工况</p>
+<p>FINISH                         ! 结束求解器</p>
+<p>/POST1                         ! 读取当前工况结果</p>
+<p>SET,LAST                       ! 最新位移结果</p>
+<p>gmin0=gap0                     ! 初始化最小流道间距m</p>
+<p>*DO,jj,0,ny0                   ! 比较同轴向坐标的相对两面位移</p>
+<p>nleft0=jj*(nx0+1)+nx0+1        ! 左板流道侧节点</p>
+<p>nright0=10000+jj*(nx0+1)+1     ! 右板流道侧节点</p>
+<p>*GET,ul0,NODE,nleft0,U,X       ! 左侧表面X位移m</p>
+<p>*GET,ur0,NODE,nright0,U,X      ! 右侧表面X位移m</p>
+<p>gnew0=gap0+ur0-ul0             ! 变形后的局部流道宽度m</p>
+<p>*IF,gnew0,LT,gmin0,THEN        ! 更新最小值，负值表示模型需要接触处理</p>
+<p>gmin0=gnew0                    ! 保存局部最小宽度</p>
+<p>*ENDIF                         ! 结束最小值判断</p>
+<p>*ENDDO                         ! 结束流道轴向检查</p>
+<p>*VWRITE,icase,dtemp0,gmin0      ! 下一行CSV记录工况、跨宽温差和最小间距</p>
+<p>(F8.0,&#x27;,&#x27;,E20.10,&#x27;,&#x27;,E20.10)</p>
+<p>FINISH                         ! 结束当前后处理</p>
+<p>*ENDDO                         ! 结束三工况扫描</p>
+<p>*CFCLOS                        ! 关闭结果文件</p>
+<p>```</p>
+<h2>预期结果</h2>
+<ul>
+<li>零温差时流道保持初始宽度；增加相反梯度应导致相向弯曲。</li>
+<li>最小间距必须在全部匹配高度检查，不只用某一节点最大位移。</li>
+<li>出现负间距仅说明无接触模型失效，应停止外推并引入接触，不能报告真实穿透。</li>
+</ul>
+<h2>验证清单</h2>
+<ul>
+<li>确认温度为K、膨胀系数为1/K、坐标为m。</li>
+<li>先做零温差及两板同向梯度的对照。</li>
+<li>加密轴向和宽度网格，比较最小间距。</li>
+<li>对小变形假设检查位移/长度和转角；窄间距不代表接触已计算。</li>
+</ul>
+<h2>常见错误</h2>
+<ul>
+<li>把两块板同号温差误以为相向；用符号与位移图核对。</li>
+<li>只扣除单板最大位移；应比较同高度两个表面的相对位移。</li>
+<li>负间距仍继续迭代当作物理结果；增加接触与流道反馈模型后再分析。</li>
+</ul>
+<h2>练习</h2>
+<ul>
+<li>将温差改为0、2、4 K并画最小间距关系。</li>
+<li>扩展为热解—位移—局部换热更新，并检查固定点迭代收敛及POD快照覆盖。</li>
+</ul>
+<h2>命令依据</h2>
+<ul>
+<li>[Ansys官方命令/单元参考](https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_elem/Hlp_E_PLANE182.html)</li>
+</ul>
+<h2>验证状态</h2>
+<p>Ansys MAPDL 2023 R1在本课validation隔离目录完成求解，返回码0、错误0。教学结果并非工程安全验证；尚未完成网格独立性及实测对照。</p>
+<p>跨板温差2、4、6 K时，最小流道宽度分别为2.7095, 2.4189, 2.1284 mm。无警告；仍是指定温度的小变形模型。</p><h2>完整 example.inp（逐行中文注释）</h2><pre><span class="code-line"><i>01</i><span class="code">/CLEAR,NOSTART                 </span><span class="comment">! 独立模型；SI单位m、N、K、Pa</span></span>
+<span class="code-line"><i>02</i><span class="code">/FILNAME,lesson22               </span><span class="comment">! 设置本课输出前缀</span></span>
+<span class="code-line"><i>03</i><span class="code">/PREP7                         </span><span class="comment">! 进入前处理</span></span>
+<span class="code-line"><i>04</i><span class="code">length0=0.40                   </span><span class="comment">! 两个等效板条长度m</span></span>
+<span class="code-line"><i>05</i><span class="code">width0=0.004                   </span><span class="comment">! 板条宽度m，沿X模拟热梯度</span></span>
+<span class="code-line"><i>06</i><span class="code">gap0=0.003                     </span><span class="comment">! 初始流道间距m</span></span>
+<span class="code-line"><i>07</i><span class="code">ny0=40                        </span><span class="comment">! 轴向单元数</span></span>
+<span class="code-line"><i>08</i><span class="code">nx0=4                         </span><span class="comment">! 宽度方向单元数</span></span>
+<span class="code-line"><i>09</i><span class="code">ET,1,PLANE182                  </span><span class="comment">! 二维四节点结构单元，默认平面应力</span></span>
+<span class="code-line"><i>10</i><span class="code">MP,EX,1,1.9e11                 </span><span class="comment">! 教学弹性模量Pa</span></span>
+<span class="code-line"><i>11</i><span class="code">MP,PRXY,1,0.30                 </span><span class="comment">! 泊松比</span></span>
+<span class="code-line"><i>12</i><span class="code">MP,ALPX,1,1.2e-5               </span><span class="comment">! 线膨胀系数1/K</span></span>
+<span class="code-line"><i>13</i><span class="code">TREF,550                       </span><span class="comment">! 无热应变参考温度K</span></span>
+<span class="code-line"><i>14</i><span class="code">*DO,ir,1,2                     </span><span class="comment">! 分别创建左右两根等效板条</span></span>
+<span class="code-line"><i>15</i><span class="code">base0=(ir-1)*10000             </span><span class="comment">! 为右板条分配独立节点编号</span></span>
+<span class="code-line"><i>16</i><span class="code">xbase0=(ir-1)*(width0+gap0)     </span><span class="comment">! 板条左边缘坐标m</span></span>
+<span class="code-line"><i>17</i><span class="code">*DO,jj,0,ny0                   </span><span class="comment">! 轴向节点循环</span></span>
+<span class="code-line"><i>18</i><span class="code">*DO,ii,0,nx0                   </span><span class="comment">! 宽度节点循环</span></span>
+<span class="code-line"><i>19</i><span class="code">nid0=base0+jj*(nx0+1)+ii+1     </span><span class="comment">! 结构化节点编号</span></span>
+<span class="code-line"><i>20</i><span class="code">N,nid0,xbase0+width0*ii/nx0,length0*jj/ny0 </span><span class="comment">! 节点坐标m</span></span>
+<span class="code-line"><i>21</i><span class="code">*ENDDO                         </span><span class="comment">! 结束宽度节点循环</span></span>
+<span class="code-line"><i>22</i><span class="code">*ENDDO                         </span><span class="comment">! 结束轴向节点循环</span></span>
+<span class="code-line"><i>23</i><span class="code">*DO,jj,0,ny0-1                 </span><span class="comment">! 轴向单元循环</span></span>
+<span class="code-line"><i>24</i><span class="code">*DO,ii,0,nx0-1                 </span><span class="comment">! 宽度单元循环</span></span>
+<span class="code-line"><i>25</i><span class="code">nid0=base0+jj*(nx0+1)+ii+1     </span><span class="comment">! 当前单元左下节点</span></span>
+<span class="code-line"><i>26</i><span class="code">E,nid0,nid0+1,nid0+nx0+2,nid0+nx0+1 </span><span class="comment">! 逆时针创建四节点单元</span></span>
+<span class="code-line"><i>27</i><span class="code">*ENDDO                         </span><span class="comment">! 结束宽度单元循环</span></span>
+<span class="code-line"><i>28</i><span class="code">*ENDDO                         </span><span class="comment">! 结束轴向单元循环</span></span>
+<span class="code-line"><i>29</i><span class="code">*ENDDO                         </span><span class="comment">! 完成两根板条</span></span>
+<span class="code-line"><i>30</i><span class="code">NSEL,S,LOC,Y,0                 </span><span class="comment">! 选底边节点</span></span>
+<span class="code-line"><i>31</i><span class="code">D,ALL,ALL,0                    </span><span class="comment">! 底边固支，抑制刚体运动</span></span>
+<span class="code-line"><i>32</i><span class="code">ALLSEL,ALL                     </span><span class="comment">! 恢复完整模型</span></span>
+<span class="code-line"><i>33</i><span class="code">FINISH                         </span><span class="comment">! 完成前处理</span></span>
+<span class="code-line"><i>34</i><span class="code">*CFOPEN,channel_scan,csv        </span><span class="comment">! 打开参数扫描结果</span></span>
+<span class="code-line"><i>35</i><span class="code">*DO,icase,1,3                  </span><span class="comment">! 三个热梯度工况</span></span>
+<span class="code-line"><i>36</i><span class="code">dtemp0=2*icase                 </span><span class="comment">! 跨板条温差为2、4、6 K</span></span>
+<span class="code-line"><i>37</i><span class="code">/SOLU                          </span><span class="comment">! 开始当前工况</span></span>
+<span class="code-line"><i>38</i><span class="code">ANTYPE,STATIC                  </span><span class="comment">! 线性静力热变形</span></span>
+<span class="code-line"><i>39</i><span class="code">NLGEOM,OFF                     </span><span class="comment">! 小变形；不计算接触或流动反馈</span></span>
+<span class="code-line"><i>40</i><span class="code">*DO,ir,1,2                     </span><span class="comment">! 两条板分别施加相反温度梯度</span></span>
+<span class="code-line"><i>41</i><span class="code">base0=(ir-1)*10000             </span><span class="comment">! 当前板节点编号起点</span></span>
+<span class="code-line"><i>42</i><span class="code">sign0=2*ir-3                   </span><span class="comment">! 左板负梯度，右板正梯度，向流道弯曲</span></span>
+<span class="code-line"><i>43</i><span class="code">*DO,jj,0,ny0                   </span><span class="comment">! 遍历轴向节点</span></span>
+<span class="code-line"><i>44</i><span class="code">*DO,ii,0,nx0                   </span><span class="comment">! 遍历宽度节点</span></span>
+<span class="code-line"><i>45</i><span class="code">nid0=base0+jj*(nx0+1)+ii+1     </span><span class="comment">! 当前节点</span></span>
+<span class="code-line"><i>46</i><span class="code">temp0=550+sign0*dtemp0*(ii/nx0-0.5) </span><span class="comment">! 指定线性温度场K，非热分析结果</span></span>
+<span class="code-line"><i>47</i><span class="code">BF,nid0,TEMP,temp0             </span><span class="comment">! 节点热膨胀载荷</span></span>
+<span class="code-line"><i>48</i><span class="code">*ENDDO                         </span><span class="comment">! 结束宽度载荷循环</span></span>
+<span class="code-line"><i>49</i><span class="code">*ENDDO                         </span><span class="comment">! 结束轴向载荷循环</span></span>
+<span class="code-line"><i>50</i><span class="code">*ENDDO                         </span><span class="comment">! 完成两块板载荷</span></span>
+<span class="code-line"><i>51</i><span class="code">SOLVE                          </span><span class="comment">! 求解当前静力工况</span></span>
+<span class="code-line"><i>52</i><span class="code">FINISH                         </span><span class="comment">! 结束求解器</span></span>
+<span class="code-line"><i>53</i><span class="code">/POST1                         </span><span class="comment">! 读取当前工况结果</span></span>
+<span class="code-line"><i>54</i><span class="code">SET,LAST                       </span><span class="comment">! 最新位移结果</span></span>
+<span class="code-line"><i>55</i><span class="code">gmin0=gap0                     </span><span class="comment">! 初始化最小流道间距m</span></span>
+<span class="code-line"><i>56</i><span class="code">*DO,jj,0,ny0                   </span><span class="comment">! 比较同轴向坐标的相对两面位移</span></span>
+<span class="code-line"><i>57</i><span class="code">nleft0=jj*(nx0+1)+nx0+1        </span><span class="comment">! 左板流道侧节点</span></span>
+<span class="code-line"><i>58</i><span class="code">nright0=10000+jj*(nx0+1)+1     </span><span class="comment">! 右板流道侧节点</span></span>
+<span class="code-line"><i>59</i><span class="code">*GET,ul0,NODE,nleft0,U,X       </span><span class="comment">! 左侧表面X位移m</span></span>
+<span class="code-line"><i>60</i><span class="code">*GET,ur0,NODE,nright0,U,X      </span><span class="comment">! 右侧表面X位移m</span></span>
+<span class="code-line"><i>61</i><span class="code">gnew0=gap0+ur0-ul0             </span><span class="comment">! 变形后的局部流道宽度m</span></span>
+<span class="code-line"><i>62</i><span class="code">*IF,gnew0,LT,gmin0,THEN        </span><span class="comment">! 更新最小值，负值表示模型需要接触处理</span></span>
+<span class="code-line"><i>63</i><span class="code">gmin0=gnew0                    </span><span class="comment">! 保存局部最小宽度</span></span>
+<span class="code-line"><i>64</i><span class="code">*ENDIF                         </span><span class="comment">! 结束最小值判断</span></span>
+<span class="code-line"><i>65</i><span class="code">*ENDDO                         </span><span class="comment">! 结束流道轴向检查</span></span>
+<span class="code-line"><i>66</i><span class="code">*VWRITE,icase,dtemp0,gmin0      </span><span class="comment">! 下一行CSV记录工况、跨宽温差和最小间距</span></span>
+<span class="code-line"><i>67</i><span class="code">(F8.0,&#x27;,&#x27;,E20.10,&#x27;,&#x27;,E20.10)</span></span>
+<span class="code-line"><i>68</i><span class="code">FINISH                         </span><span class="comment">! 结束当前后处理</span></span>
+<span class="code-line"><i>69</i><span class="code">*ENDDO                         </span><span class="comment">! 结束三工况扫描</span></span>
+<span class="code-line"><i>70</i><span class="code">*CFCLOS                        </span><span class="comment">! 关闭结果文件</span></span></pre></main><footer class="shell">ANSYS APDL 反应堆热工结构每日学习 · 示例用于建模训练和命令理解</footer></body></html>
