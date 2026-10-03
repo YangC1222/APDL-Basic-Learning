@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-01",
+  "lesson": 21,
+  "topic": "燃料组件格架与导向管的模态分析",
+  "difficulty": "进阶",
+  "commands": [
+    "SECTYPE",
+    "SECDATA",
+    "SECNUM",
+    "BEAM188",
+    "MODOPT",
+    "MXPAND",
+    "*GET"
+  ],
+  "validation_status": "solved",
+  "validation_note": "Ansys MAPDL 2023 R1在本课validation隔离目录完成求解，返回码0、错误0。教学结果并非工程安全验证；尚未完成网格独立性及实测对照。本次六阶频率为6.8808, 12.2064, 43.0076, 50.4544, 86.0201, 104.8618 Hz。无警告。",
+  "prerequisite": "第20课",
+  "model_assumptions": "两根1.6 m导向管轴距30 mm，内外半径8/10 mm，格架为2×10 mm等效梁。两管底部固支。假定线弹性、无预应力、无流体附加质量与接触松动；钢参数仅用于教学。",
+  "references": [
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_vm/Hlp_V_VM57TXT.html"
+  ],
+  "validated_at": "2026-10-03T16:46:05.881521+00:00"
+}
