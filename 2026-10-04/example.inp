@@ -1,0 +1,83 @@
+/CLEAR,NOSTART ! 独立数据库，不连接已有求解实例
+/FILNAME,global24 ! 全局结构结果文件前缀
+/PREP7 ! 结构前处理；采用m、N、Pa、K
+ET,1,SOLID185 ! 三维线弹性实体单元
+MP,EX,1,1.5E11 ! 教学弹性模量Pa
+MP,PRXY,1,0.3 ! 教学泊松比
+MP,ALPX,1,1.5E-5 ! 教学热膨胀系数1/K
+BLOCK,0,0.1,0,0.02,0,0.005 ! 100×20×5 mm等效格架连接条
+ESIZE,0.005 ! 全局名义网格5 mm
+MSHKEY,1 ! 映射六面体网格
+VMESH,ALL ! 划分全局实体网格
+TREF,300 ! 无应力参考温度300 K
+BF,ALL,TEMP,600 ! 全部节点均匀温度600 K
+NSEL,S,LOC,X,0 ! 左端限制全部位移，代表支承
+D,ALL,ALL,0 ! 左端三个位移为零
+NSEL,S,LOC,X,0.1 ! 右端仅限制轴向位移
+D,ALL,UX,0 ! 禁止轴向热伸长，允许横向变形
+ALLSEL,ALL ! 恢复全部节点和单元
+FINISH ! 结束前处理
+/SOLU ! 全局模型静力求解
+ANTYPE,STATIC ! 线弹性静态分析
+OUTRES,ALL,ALL ! 保存位移与应力数据
+SOLVE ! 求解全局热应力
+FINISH ! 离开求解器
+SAVE,global24,db ! 求解后保存全局数据库，保持与rst一致
+/POST1 ! 读取全局结果
+SET,LAST ! 最后一个已收敛结果集
+nc=NODE(0.05,0.01,0.0025) ! 取靠近中央的全局节点
+*GET,sg,NODE,nc,S,X ! 全局中央节点平均轴向应力Pa
+*CFOPEN,global_stress,txt ! 保存全局中央应力供外部对比
+*VWRITE,sg ! 下一行纯格式输出应力Pa
+(E20.12)
+*CFCLOS ! 关闭全局结果文本
+FINISH ! 离开后处理
+/CLEAR,NOSTART ! 新建子模型数据库，不修改全局结果文件
+/FILNAME,sub24 ! 子模型采用独立前缀
+/PREP7 ! 子模型建模
+ET,1,SOLID185 ! 与全局模型保持同类实体单元
+MP,EX,1,1.5E11 ! 与全局模型相同弹性模量Pa
+MP,PRXY,1,0.3 ! 与全局模型相同泊松比
+MP,ALPX,1,1.5E-5 ! 与全局模型相同热膨胀系数
+BLOCK,0.04,0.06,0,0.02,0,0.005 ! 取全局坐标40至60 mm中央段
+ESIZE,0.001 ! 子模型名义网格1 mm
+MSHKEY,1 ! 子模型映射六面体网格
+VMESH,ALL ! 生成细网格
+NSEL,S,LOC,X,0.04 ! 选择左人工切边
+NSEL,A,LOC,X,0.06 ! 合并右人工切边
+NWRITE,cut24,node ! 仅输出切边节点；自由表面不能误选
+ALLSEL,ALL ! 保存前恢复全部节点和单元
+SAVE,sub24,db ! 保存未加载的子模型数据库
+FINISH ! 离开子模型前处理
+RESUME,global24,db ! 插值时数据库必须恢复为全局模型
+/POST1 ! 切边插值只能在通用后处理中执行
+FILE,global24,rst ! 显式读取全局结果文件
+SET,LAST ! 加载对应全局结果集
+ALLSEL,ALL ! 对全局全部单元执行插值搜索
+CBDOF,cut24,node,,mapped24,cbdo ! 根据形函数生成切边位移D命令
+FINISH ! 离开插值后处理
+RESUME,sub24,db ! 恢复子模型数据库
+/FILNAME,sub24 ! 防止覆盖全局结果前缀
+/PREP7 ! 设置与全局一致的热载荷
+TREF,300 ! 子模型相同参考温度300 K
+BF,ALL,TEMP,600 ! 均匀温度可直接重复；非均匀温度需BFINT映射全节点
+FINISH ! 完成子模型热载荷
+/SOLU ! 子模型静力求解
+ANTYPE,STATIC ! 与全局分析类型一致
+/INPUT,mapped24,cbdo ! 载入真实插值得到的切边位移，不设额外固支
+OUTRES,ALL,ALL ! 保存子模型结果
+SOLVE ! 求解细网格子模型
+FINISH ! 结束子模型求解
+SAVE,sub24,db ! 保存求解后的细网格模型
+/POST1 ! 子模型结果检查
+SET,LAST ! 读取最后结果
+nc=NODE(0.05,0.01,0.0025) ! 寻找子模型中央节点
+*GET,ss,NODE,nc,S,X ! 中央节点平均轴向应力Pa
+*GET,ux,NODE,nc,U,X ! 中央轴向位移m
+*GET,ne,ELEM,0,COUNT ! 子模型单元数
+*CFOPEN,sub_stress,txt ! 保存应力、位移及网格数量
+*VWRITE,ss,ux,ne ! 下一行按三个科学计数列输出
+(3E20.12)
+*CFCLOS ! 关闭结果文本
+PRNSOL,S,COMP ! 打印应力供检查切边和内部一致性
+FINISH ! 本例完成

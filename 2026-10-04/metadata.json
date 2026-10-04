@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-04",
+  "lesson": 24,
+  "topic": "子模型法评估燃料组件局部热应力",
+  "difficulty": "进阶",
+  "commands": [
+    "SOLID185",
+    "NWRITE",
+    "CBDOF",
+    "RESUME",
+    "FILE",
+    "BF",
+    "TREF",
+    "*GET"
+  ],
+  "validation_status": "solved",
+  "validation_note": "隔离MAPDL 2023 R1执行成功；全局及子模型均收敛，0错误、0警告，CBDOF生成真实切边约束。全局中央σx=-688.430112 MPa，子模型=-688.413088 MPa，差异0.0025%；子模型2000单元。与理想单轴−675 MPa存在约2%端部三维约束偏差，不冒充解析完全吻合。尚未做网格/切边距离研究，也未包含缺口或非线性材料。",
+  "prerequisite": "第23课",
+  "model_assumptions": "100×20×5 mm均质等效格架连接条，中央40–60 mm为细化子模型。SI单位m、N、Pa、K。左端全固定、右端仅UX=0；温度均匀600 K，参考300 K；E=150 GPa、ν=0.3、α=1.5×10⁻⁵/K均为教学常数。模型线弹性且无接触、蠕变、焊缝或实际辐照材料。高热应力旨在检验数据传递，不是安全许用值。",
+  "references": [
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_adv/Hlp_G_ADV4_2.html",
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_cmd/Hlp_C_CBDOF.html"
+  ],
+  "validation_results": {
+    "global_sx_pa": -688430112.0,
+    "submodel_sx_pa": -688413088.0,
+    "relative_difference": 2.4728726566800727e-05,
+    "errors": 0,
+    "warnings": 0
+  }
+}
