@@ -1,0 +1,107 @@
+/CLEAR,NOSTART ! 独立开始，不修改已运行的用户实例
+/FILNAME,lesson25 ! 独立结果前缀
+/PREP7 ! 前处理；m、N、Pa、K、单位出平面厚度1 m
+ET,1,PLANE182 ! 平面应力线弹性教学模型
+KEYOPT,1,3,0 ! 平面应力，不把本例当轴对称燃料棒
+MP,EX,1,1.0E11 ! 等效燃料弹性模量Pa
+MP,PRXY,1,0.3 ! 等效燃料泊松比
+MP,ALPX,1,1.0E-5 ! 等效燃料热膨胀系数1/K
+MP,EX,2,1.5E11 ! 等效格架弹性模量Pa
+MP,PRXY,2,0.3 ! 等效格架泊松比
+MP,ALPX,2,1.5E-5 ! 格架热膨胀系数1/K，但温度保持参考值
+RECTNG,0,0.005,0,0.005 ! 等效燃料四分之一截面5×5 mm
+RECTNG,0.00502,0.00602,0,0.005 ! 格架支承条宽1 mm，初始间隙20 μm
+ESIZE,0.0005 ! 名义网格0.5 mm
+MSHKEY,1 ! 映射四边形网格
+TYPE,1 ! 结构单元指针
+MAT,1 ! 第一块使用燃料材料
+AMESH,1 ! 先划分燃料网格
+ASEL,S,AREA,,1 ! 仅燃料面积
+NSLA,S,1 ! 选燃料全部节点
+CM,FUEL,NODE ! 保存燃料节点组件
+ALLSEL,ALL ! 恢复全部实体
+MAT,2 ! 第二块使用格架材料
+AMESH,2 ! 分别划分格架，不能合并间隙节点
+ASEL,S,AREA,,2 ! 选择格架面积
+NSLA,S,1 ! 选择格架全部节点
+CM,WALL,NODE ! 保存格架节点组件
+ALLSEL,ALL ! 恢复全部结构
+ET,2,TARGE169 ! 二维目标线，附在可变形格架上
+ET,3,CONTA172 ! 二维面接触，使用燃料外表面
+KEYOPT,3,2,0 ! 增广拉格朗日法
+KEYOPT,3,5,0 ! 不自动消除真实初始间隙
+KEYOPT,3,12,0 ! 标准接触，允许分离，无摩擦
+R,2,,,1.0,0.001,,-0.001 ! 刚度因子1、穿透容差因子0.001、绝对搜索半径1 mm（负号）
+REAL,2 ! 接触与目标共享同一实常数编号
+CMSEL,S,WALL ! 只取格架节点
+NSEL,R,LOC,X,0.00502 ! 目标为格架左侧面
+TYPE,2 ! 指定目标线类型
+ESURF ! 在选定外边界生成目标线
+ALLSEL,ALL ! 恢复所有节点和单元
+CMSEL,S,FUEL ! 只取燃料节点
+NSEL,R,LOC,X,0.005 ! 接触为燃料右侧面
+TYPE,3 ! 指定接触线类型
+ESURF ! 生成朝向格架的接触线
+ALLSEL,ALL ! 恢复所有节点和单元
+NSEL,S,LOC,Y,0 ! 两结构下边均为y对称面
+D,ALL,UY,0 ! 仅法向位移为零，不约束切向热膨胀
+NSEL,S,LOC,X,0 ! 燃料x对称面
+D,ALL,UX,0 ! 仅法向位移为零
+NSEL,S,LOC,X,0.00602 ! 格架外侧真实法向支承
+D,ALL,UX,0 ! 禁止向外运动，不锁死竖直滑移
+ALLSEL,ALL ! 求解前恢复全选择
+TREF,300 ! 两材料无应力参考温度300 K
+FINISH ! 完成前处理
+*DO,step,1,3 ! 三个载荷阶段：间隙、闭合、卸载
+*IF,step,EQ,1,THEN ! 第一阶段燃料温度600 K
+ft=600 ! 温升300 K，预计保持开口
+*ELSEIF,step,EQ,2,THEN ! 第二阶段温度900 K
+ft=900 ! 温升600 K，预计发生接触
+*ELSE ! 第三阶段返回参考温度
+ft=300 ! 检查无摩擦弹性卸载后的重新分离
+*ENDIF ! 完成温度选择
+/SOLU ! 每阶段进入求解器
+ANTYPE,STATIC ! 非线性接触静力分析
+CMSEL,S,FUEL ! 只修改燃料节点温度
+BF,ALL,TEMP,ft ! 燃料统一指定温度，不解导热
+CMSEL,S,WALL ! 格架温度单独指定
+BF,ALL,TEMP,300 ! 格架保持参考温度
+ALLSEL,ALL ! 恢复全部结构和接触
+TIME,step ! 阶段编号作为静态载荷时间
+AUTOTS,ON ! 接触闭合时自动调整子步
+NSUBST,30,300,10 ! 起始30步，最多300步，最少10步
+NLGEOM,ON ! 启用大变形以兼容接触更新
+CNVTOL,F,,1E-6,2,1 ! 力收敛容差更严格，最小参考力1 N适用于本单位制
+OUTRES,ALL,ALL ! 保存完整结果
+SOLVE ! 求解本阶段
+FINISH ! 结束本阶段求解
+/POST1 ! 读取本阶段结果
+SET,LAST ! 最后收敛子步
+ALLSEL,ALL ! 恢复节点后查询几何位置
+nf=NODE(0.005,0.0025,0) ! 燃料接触边中点节点
+nw=NODE(0.00502,0.0025,0) ! 格架目标边中点节点
+*GET,uf,NODE,nf,U,X ! 燃料中点径向位移m
+*GET,uw,NODE,nw,U,X ! 格架中点径向位移m
+gap=0.00002+uw-uf ! 变形后两边中点间距m，负值为数值穿透
+ESEL,S,TYPE,,3 ! 仅选择接触单元，避免混入结构单元
+pmax=0 ! 开口时物理接触压力为零，避免读取不存在的数据
+*IF,gap,LT,0,THEN ! 仅闭合有数值穿透时读取接触结果
+ETABLE,cp,SMISC,5 ! 官方CONTA172元素平均法向压力Pa
+*GET,nc,ELEM,0,COUNT ! 接触单元数
+*GET,ec,ELEM,0,NUM,MIN ! 最小选中接触单元编号
+pmax=0 ! 初始化最大元素平均压力
+*DO,j,1,nc ! 遍历接触单元
+*GET,pp,ELEM,ec,ETAB,cp ! 读取当前单元平均接触压力
+*IF,pp,GT,pmax,THEN ! 更新压力最大值
+pmax=pp ! 保存最大元素平均压力Pa
+*ENDIF ! 结束比较
+*GET,ec,ELEM,ec,NXTH ! 下一个选中接触单元
+*ENDDO ! 结束压力遍历
+*ENDIF ! 开口阶段不强行访问未定义接触压力
+ALLSEL,ALL ! 输出前恢复全模型
+*CFOPEN,contact_history,csv,,APPEND ! 追加温度、间距、压力输出
+*VWRITE,step,ft,gap,pmax ! 下一行四列科学计数格式
+(4E20.12)
+*CFCLOS ! 关闭输出文件
+FINISH ! 离开后处理
+*ENDDO ! 完成全部载荷阶段

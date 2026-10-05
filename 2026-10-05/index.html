@@ -1,0 +1,275 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07131f">
+<title>第 25 课 · 燃料组件中的接触、对称性和约束选择</title><style>
+:root{--bg:#06111b;--panel:#0d2130;--paper:#f6faf8;--ink:#102936;--muted:#617681;--cyan:#62e0df;--gold:#ffd166;--line:#dce8e7}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#173f50 0,transparent 35%),var(--bg);color:#e9f7f5;font:16px/1.78 Inter,"PingFang SC","Microsoft YaHei",sans-serif}a{color:inherit}.shell{width:min(1060px,calc(100% - 28px));margin:auto}header{padding:56px 0 36px}.back{color:var(--cyan);text-decoration:none;font-weight:800}.eyebrow{margin-top:30px;color:var(--cyan);font-weight:900;letter-spacing:.13em}h1{font-size:clamp(34px,6vw,62px);line-height:1.12;margin:10px 0}.meta{color:#acc4c9}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}.button{padding:11px 16px;border-radius:999px;background:var(--cyan);color:#06212a;text-decoration:none;font-weight:900}.button.secondary{background:transparent;color:var(--cyan);border:1px solid #2a6170}main{background:var(--paper);color:var(--ink);border-radius:22px 22px 0 0;padding:34px clamp(20px,5vw,64px) 72px}.status{border-left:5px solid var(--gold);background:#fff5d5;padding:12px 16px;border-radius:0 9px 9px 0}figure{margin:28px 0 36px}figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:16px;background:#f4faf9}figcaption{color:var(--muted);font-size:13px;margin-top:8px}h2{font-size:24px;margin:34px 0 10px;color:#0c6870}h3{color:#0c6870}p,li{max-width:850px}code{background:#e4efed;border-radius:5px;padding:2px 5px;color:#0b5f67}.commands{display:flex;gap:7px;flex-wrap:wrap;margin:18px 0 28px}.commands span{background:#dcefed;color:#135d63;border-radius:999px;padding:4px 9px;font:13px Consolas,monospace}blockquote{margin:28px 0;border-left:4px solid #e0a92f;background:#fff7dc;padding:13px 16px}pre{overflow:auto;background:#071621;color:#d8efea;padding:18px 0;border-radius:14px;font:14px/1.65 Consolas,"Microsoft YaHei",monospace}.code-line{display:block;min-width:max-content;padding:0 20px}.code-line:hover{background:#102838}.code-line i{display:inline-block;width:36px;margin-right:16px;color:#52707c;font-style:normal;text-align:right;user-select:none}.code-line .code{color:#d8efea}.code-line .comment{color:#84d7a0}footer{color:#8ba5ac;padding:25px 0 42px}@media(max-width:600px){header{padding-top:34px}main{border-radius:16px 16px 0 0}}
+</style></head><body><header class="shell"><a class="back" href="../">← 返回课程首页</a><div class="eyebrow">2026-10-05 · LESSON 25</div><h1>燃料组件中的接触、对称性和约束选择</h1><p class="meta">难度：进阶 · 前置课程：第24课</p><div class="actions"><a class="button" href="example.inp" download>下载 APDL 示例</a><a class="button secondary" href="model.svg" download>下载模型图</a><a class="button secondary" href="README.md">查看 Markdown 讲义</a></div></header><main class="shell"><p class="status"><strong>验证状态：</strong>已通过 MAPDL 求解<br>MAPDL隔离执行：四个算例均0错误；基线开口/闭合/卸载间距[4.97747739354, -0.00442252873276, 20.0] μm，闭合最大元素平均压力192.664 MPa；相对反力不平衡1.45e-07。刚度0.5/2与网格0.25 mm的压力变化约−2.65%/+3.00%/+3.65%，未声称网格独立或工程认证。仍有接触刚度过大及初始开口警告。</p><figure><img src="model.svg" alt="燃料组件中的接触、对称性和约束选择模型示意图"><figcaption>几何、材料区域、载荷和边界条件与本课 example.inp 对应；示意尺寸以图中标注为准。</figcaption></figure><div class="commands"><span>PLANE182</span><span>CONTA172</span><span>TARGE169</span><span>CMSEL</span><span>D</span><span>AUTOTS</span><span>ETABLE</span></div><p>2026-10-05</p>
+<h2>今日目标</h2>
+<p>正确区分对称面与真实支承，在热膨胀下求解间隙闭合和弹性卸载。</p>
+<h2>物理问题</h2>
+<p>等效燃料方形横截面的四分之一，x/y对称面上分别仅限制UX/UY；右侧为可变形格架支承条，间隙20 μm。燃料5×5 mm，格架1×5 mm。平面应力、出平面厚度1 m；热载荷为燃料600→900→300 K，格架300 K，参考300 K。线弹性教学材料，没有塑性、蠕变、辐照或热接触阻抗。该等效几何不是实际圆柱燃料棒，更不能代表真实组件接触安全性。</p>
+<h2>关键命令</h2>
+<ul>
+<li><code>PLANE182</code>：平面应力等效截面，不能当作轴对称模型。</li>
+<li><code>CM/CMSEL</code>：燃料与格架载荷分开，避免温度施加到错误选择集。</li>
+<li><code>TARGE169/CONTA172/ESURF</code>：目标线与接触线配对。</li>
+<li><code>KEYOPT/R</code>：保留间隙并指定标准接触与搜索半径；增大半径不会消除物理间隙。</li>
+<li><code>D,UX/UY</code>：对称面仅约束法向位移；真实格架外侧支承单独解释。</li>
+<li><code>AUTOTS/NSUBST</code>：跟踪开闭状态并检查收敛。</li>
+<li><code>ETABLE,cp,SMISC,5</code>：提取元素平均压力；不是未平均接触点峰值。</li>
+</ul>
+<h2>完整脚本</h2>
+<p>```apdl</p>
+<p>/CLEAR,NOSTART ! 独立开始，不修改已运行的用户实例</p>
+<p>/FILNAME,lesson25 ! 独立结果前缀</p>
+<p>/PREP7 ! 前处理；m、N、Pa、K、单位出平面厚度1 m</p>
+<p>ET,1,PLANE182 ! 平面应力线弹性教学模型</p>
+<p>KEYOPT,1,3,0 ! 平面应力，不把本例当轴对称燃料棒</p>
+<p>MP,EX,1,1.0E11 ! 等效燃料弹性模量Pa</p>
+<p>MP,PRXY,1,0.3 ! 等效燃料泊松比</p>
+<p>MP,ALPX,1,1.0E-5 ! 等效燃料热膨胀系数1/K</p>
+<p>MP,EX,2,1.5E11 ! 等效格架弹性模量Pa</p>
+<p>MP,PRXY,2,0.3 ! 等效格架泊松比</p>
+<p>MP,ALPX,2,1.5E-5 ! 格架热膨胀系数1/K，但温度保持参考值</p>
+<p>RECTNG,0,0.005,0,0.005 ! 等效燃料四分之一截面5×5 mm</p>
+<p>RECTNG,0.00502,0.00602,0,0.005 ! 格架支承条宽1 mm，初始间隙20 μm</p>
+<p>ESIZE,0.0005 ! 名义网格0.5 mm</p>
+<p>MSHKEY,1 ! 映射四边形网格</p>
+<p>TYPE,1 ! 结构单元指针</p>
+<p>MAT,1 ! 第一块使用燃料材料</p>
+<p>AMESH,1 ! 先划分燃料网格</p>
+<p>ASEL,S,AREA,,1 ! 仅燃料面积</p>
+<p>NSLA,S,1 ! 选燃料全部节点</p>
+<p>CM,FUEL,NODE ! 保存燃料节点组件</p>
+<p>ALLSEL,ALL ! 恢复全部实体</p>
+<p>MAT,2 ! 第二块使用格架材料</p>
+<p>AMESH,2 ! 分别划分格架，不能合并间隙节点</p>
+<p>ASEL,S,AREA,,2 ! 选择格架面积</p>
+<p>NSLA,S,1 ! 选择格架全部节点</p>
+<p>CM,WALL,NODE ! 保存格架节点组件</p>
+<p>ALLSEL,ALL ! 恢复全部结构</p>
+<p>ET,2,TARGE169 ! 二维目标线，附在可变形格架上</p>
+<p>ET,3,CONTA172 ! 二维面接触，使用燃料外表面</p>
+<p>KEYOPT,3,2,0 ! 增广拉格朗日法</p>
+<p>KEYOPT,3,5,0 ! 不自动消除真实初始间隙</p>
+<p>KEYOPT,3,12,0 ! 标准接触，允许分离，无摩擦</p>
+<p>R,2,,,1.0,0.001,,-0.001 ! 刚度因子1、穿透容差因子0.001、绝对搜索半径1 mm（负号）</p>
+<p>REAL,2 ! 接触与目标共享同一实常数编号</p>
+<p>CMSEL,S,WALL ! 只取格架节点</p>
+<p>NSEL,R,LOC,X,0.00502 ! 目标为格架左侧面</p>
+<p>TYPE,2 ! 指定目标线类型</p>
+<p>ESURF ! 在选定外边界生成目标线</p>
+<p>ALLSEL,ALL ! 恢复所有节点和单元</p>
+<p>CMSEL,S,FUEL ! 只取燃料节点</p>
+<p>NSEL,R,LOC,X,0.005 ! 接触为燃料右侧面</p>
+<p>TYPE,3 ! 指定接触线类型</p>
+<p>ESURF ! 生成朝向格架的接触线</p>
+<p>ALLSEL,ALL ! 恢复所有节点和单元</p>
+<p>NSEL,S,LOC,Y,0 ! 两结构下边均为y对称面</p>
+<p>D,ALL,UY,0 ! 仅法向位移为零，不约束切向热膨胀</p>
+<p>NSEL,S,LOC,X,0 ! 燃料x对称面</p>
+<p>D,ALL,UX,0 ! 仅法向位移为零</p>
+<p>NSEL,S,LOC,X,0.00602 ! 格架外侧真实法向支承</p>
+<p>D,ALL,UX,0 ! 禁止向外运动，不锁死竖直滑移</p>
+<p>ALLSEL,ALL ! 求解前恢复全选择</p>
+<p>TREF,300 ! 两材料无应力参考温度300 K</p>
+<p>FINISH ! 完成前处理</p>
+<p>*DO,step,1,3 ! 三个载荷阶段：间隙、闭合、卸载</p>
+<p>*IF,step,EQ,1,THEN ! 第一阶段燃料温度600 K</p>
+<p>ft=600 ! 温升300 K，预计保持开口</p>
+<p>*ELSEIF,step,EQ,2,THEN ! 第二阶段温度900 K</p>
+<p>ft=900 ! 温升600 K，预计发生接触</p>
+<p>*ELSE ! 第三阶段返回参考温度</p>
+<p>ft=300 ! 检查无摩擦弹性卸载后的重新分离</p>
+<p>*ENDIF ! 完成温度选择</p>
+<p>/SOLU ! 每阶段进入求解器</p>
+<p>ANTYPE,STATIC ! 非线性接触静力分析</p>
+<p>CMSEL,S,FUEL ! 只修改燃料节点温度</p>
+<p>BF,ALL,TEMP,ft ! 燃料统一指定温度，不解导热</p>
+<p>CMSEL,S,WALL ! 格架温度单独指定</p>
+<p>BF,ALL,TEMP,300 ! 格架保持参考温度</p>
+<p>ALLSEL,ALL ! 恢复全部结构和接触</p>
+<p>TIME,step ! 阶段编号作为静态载荷时间</p>
+<p>AUTOTS,ON ! 接触闭合时自动调整子步</p>
+<p>NSUBST,30,300,10 ! 起始30步，最多300步，最少10步</p>
+<p>NLGEOM,ON ! 启用大变形以兼容接触更新</p>
+<p>CNVTOL,F,,1E-6,2,1 ! 力收敛容差更严格，最小参考力1 N适用于本单位制</p>
+<p>OUTRES,ALL,ALL ! 保存完整结果</p>
+<p>SOLVE ! 求解本阶段</p>
+<p>FINISH ! 结束本阶段求解</p>
+<p>/POST1 ! 读取本阶段结果</p>
+<p>SET,LAST ! 最后收敛子步</p>
+<p>ALLSEL,ALL ! 恢复节点后查询几何位置</p>
+<p>nf=NODE(0.005,0.0025,0) ! 燃料接触边中点节点</p>
+<p>nw=NODE(0.00502,0.0025,0) ! 格架目标边中点节点</p>
+<p>*GET,uf,NODE,nf,U,X ! 燃料中点径向位移m</p>
+<p>*GET,uw,NODE,nw,U,X ! 格架中点径向位移m</p>
+<p>gap=0.00002+uw-uf ! 变形后两边中点间距m，负值为数值穿透</p>
+<p>ESEL,S,TYPE,,3 ! 仅选择接触单元，避免混入结构单元</p>
+<p>pmax=0 ! 开口时物理接触压力为零，避免读取不存在的数据</p>
+<p>*IF,gap,LT,0,THEN ! 仅闭合有数值穿透时读取接触结果</p>
+<p>ETABLE,cp,SMISC,5 ! 官方CONTA172元素平均法向压力Pa</p>
+<p>*GET,nc,ELEM,0,COUNT ! 接触单元数</p>
+<p>*GET,ec,ELEM,0,NUM,MIN ! 最小选中接触单元编号</p>
+<p>pmax=0 ! 初始化最大元素平均压力</p>
+<p>*DO,j,1,nc ! 遍历接触单元</p>
+<p>*GET,pp,ELEM,ec,ETAB,cp ! 读取当前单元平均接触压力</p>
+<p>*IF,pp,GT,pmax,THEN ! 更新压力最大值</p>
+<p>pmax=pp ! 保存最大元素平均压力Pa</p>
+<p>*ENDIF ! 结束比较</p>
+<p>*GET,ec,ELEM,ec,NXTH ! 下一个选中接触单元</p>
+<p>*ENDDO ! 结束压力遍历</p>
+<p>*ENDIF ! 开口阶段不强行访问未定义接触压力</p>
+<p>ALLSEL,ALL ! 输出前恢复全模型</p>
+<p>*CFOPEN,contact_history,csv,,APPEND ! 追加温度、间距、压力输出</p>
+<p>*VWRITE,step,ft,gap,pmax ! 下一行四列科学计数格式</p>
+<p>(4E20.12)</p>
+<p>*CFCLOS ! 关闭输出文件</p>
+<p>FINISH ! 离开后处理</p>
+<p>*ENDDO ! 完成全部载荷阶段</p>
+<p>```</p>
+<h2>预期结果</h2>
+<ul>
+<li>自由伸长估算αΔT×5 mm：温升300 K为15 μm，小于20 μm间隙；温升600 K为30 μm，超过间隙。</li>
+<li>闭合阶段应有正压力，卸载至300 K应重新分离；实际结果受格架变形影响。</li>
+<li>不预填压力；CSV四列为阶段、燃料温度K、中点间距m、最大元素平均压力Pa。</li>
+</ul>
+<h2>验证清单</h2>
+<ul>
+<li>核对接触法向、两条接触边的初始20 μm距离与节点未合并。</li>
+<li>三阶段开闭现象应与自由伸长估算一致，检查收敛和接触力平衡。</li>
+<li>对称面切向位移不应被错误固定；比较半/全模型时必须镜像相同物理支承。</li>
+<li>网格0.5→0.25 mm、刚度因子1→0.5/2分别检查；不要仅通过减刚度获得收敛。</li>
+<li>删除旧<code>contact_history.csv</code>或在全新工作目录运行，避免追加历史结果混淆。</li>
+</ul>
+<h2>常见错误</h2>
+<ul>
+<li>在对称面用ALL全固定，会产生人为热应力。</li>
+<li>以自动间隙调整消除20 μm真实间隙，改变问题。</li>
+<li>将负间距直接解释为真实穿透；应结合接触容差检查数值穿透量。</li>
+</ul>
+<h2>练习</h2>
+<ul>
+<li>将间隙改为10/20/40 μm，比较闭合温升及压力。</li>
+<li>扩展真实格架几何、温度相关材料和摩擦；POD快照须覆盖开闭两状态，不能只在开口状态训练。</li>
+</ul>
+<h2>命令依据</h2>
+<ul>
+<li>[Ansys官方参考](https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_elem/Hlp_E_CONTA172.html)</li>
+<li>[Ansys官方参考](https://ansyshelp.ansys.com/public/Views/Secured/corp/v251/en/ans_cmd/Hlp_C_DSYM.html)</li>
+</ul>
+<h2>验证状态</h2>
+<p>solved：MAPDL隔离执行：四个算例均0错误；基线开口/闭合/卸载间距[4.97747739354, -0.00442252873276, 20.0] μm，闭合最大元素平均压力192.664 MPa；相对反力不平衡1.45e-07。刚度0.5/2与网格0.25 mm的压力变化约−2.65%/+3.00%/+3.65%，未声称网格独立或工程认证。仍有接触刚度过大及初始开口警告。</p>
+<h3>数值核验与限制</h3>
+<p>|算例|闭合压力 MPa|最大元素平均压力相对基线|反力相对不平衡|</p>
+<p>|---|---:|---:|---:|</p>
+<p>|verification4|192.664|0.00%|1.45e-07|</p>
+<p>|stiffness_half4|187.564|-2.65%|1.46e-07|</p>
+<p>|stiffness_double4|198.447|3.00%|1.44e-07|</p>
+<p>|mesh_fine4|199.692|3.65%|1.43e-07|</p>
+<p>刚度警告与网格敏感性说明压力精度仍需进一步评估，不能把solved解释为工程合格。力收敛容差采用CNVTOL,F,,1E-6,2,1（最小参考力1 N）；未放宽容差来获得开闭现象。负PINB为绝对长度，正值为尺寸比例，混淆会使接触无法被检测。热载荷只模拟接触开闭，未验证真实组件辐照、材料塑性及疲劳。</p><h2>完整 example.inp（逐行中文注释）</h2><pre><span class="code-line"><i>01</i><span class="code">/CLEAR,NOSTART </span><span class="comment">! 独立开始，不修改已运行的用户实例</span></span>
+<span class="code-line"><i>02</i><span class="code">/FILNAME,lesson25 </span><span class="comment">! 独立结果前缀</span></span>
+<span class="code-line"><i>03</i><span class="code">/PREP7 </span><span class="comment">! 前处理；m、N、Pa、K、单位出平面厚度1 m</span></span>
+<span class="code-line"><i>04</i><span class="code">ET,1,PLANE182 </span><span class="comment">! 平面应力线弹性教学模型</span></span>
+<span class="code-line"><i>05</i><span class="code">KEYOPT,1,3,0 </span><span class="comment">! 平面应力，不把本例当轴对称燃料棒</span></span>
+<span class="code-line"><i>06</i><span class="code">MP,EX,1,1.0E11 </span><span class="comment">! 等效燃料弹性模量Pa</span></span>
+<span class="code-line"><i>07</i><span class="code">MP,PRXY,1,0.3 </span><span class="comment">! 等效燃料泊松比</span></span>
+<span class="code-line"><i>08</i><span class="code">MP,ALPX,1,1.0E-5 </span><span class="comment">! 等效燃料热膨胀系数1/K</span></span>
+<span class="code-line"><i>09</i><span class="code">MP,EX,2,1.5E11 </span><span class="comment">! 等效格架弹性模量Pa</span></span>
+<span class="code-line"><i>10</i><span class="code">MP,PRXY,2,0.3 </span><span class="comment">! 等效格架泊松比</span></span>
+<span class="code-line"><i>11</i><span class="code">MP,ALPX,2,1.5E-5 </span><span class="comment">! 格架热膨胀系数1/K，但温度保持参考值</span></span>
+<span class="code-line"><i>12</i><span class="code">RECTNG,0,0.005,0,0.005 </span><span class="comment">! 等效燃料四分之一截面5×5 mm</span></span>
+<span class="code-line"><i>13</i><span class="code">RECTNG,0.00502,0.00602,0,0.005 </span><span class="comment">! 格架支承条宽1 mm，初始间隙20 μm</span></span>
+<span class="code-line"><i>14</i><span class="code">ESIZE,0.0005 </span><span class="comment">! 名义网格0.5 mm</span></span>
+<span class="code-line"><i>15</i><span class="code">MSHKEY,1 </span><span class="comment">! 映射四边形网格</span></span>
+<span class="code-line"><i>16</i><span class="code">TYPE,1 </span><span class="comment">! 结构单元指针</span></span>
+<span class="code-line"><i>17</i><span class="code">MAT,1 </span><span class="comment">! 第一块使用燃料材料</span></span>
+<span class="code-line"><i>18</i><span class="code">AMESH,1 </span><span class="comment">! 先划分燃料网格</span></span>
+<span class="code-line"><i>19</i><span class="code">ASEL,S,AREA,,1 </span><span class="comment">! 仅燃料面积</span></span>
+<span class="code-line"><i>20</i><span class="code">NSLA,S,1 </span><span class="comment">! 选燃料全部节点</span></span>
+<span class="code-line"><i>21</i><span class="code">CM,FUEL,NODE </span><span class="comment">! 保存燃料节点组件</span></span>
+<span class="code-line"><i>22</i><span class="code">ALLSEL,ALL </span><span class="comment">! 恢复全部实体</span></span>
+<span class="code-line"><i>23</i><span class="code">MAT,2 </span><span class="comment">! 第二块使用格架材料</span></span>
+<span class="code-line"><i>24</i><span class="code">AMESH,2 </span><span class="comment">! 分别划分格架，不能合并间隙节点</span></span>
+<span class="code-line"><i>25</i><span class="code">ASEL,S,AREA,,2 </span><span class="comment">! 选择格架面积</span></span>
+<span class="code-line"><i>26</i><span class="code">NSLA,S,1 </span><span class="comment">! 选择格架全部节点</span></span>
+<span class="code-line"><i>27</i><span class="code">CM,WALL,NODE </span><span class="comment">! 保存格架节点组件</span></span>
+<span class="code-line"><i>28</i><span class="code">ALLSEL,ALL </span><span class="comment">! 恢复全部结构</span></span>
+<span class="code-line"><i>29</i><span class="code">ET,2,TARGE169 </span><span class="comment">! 二维目标线，附在可变形格架上</span></span>
+<span class="code-line"><i>30</i><span class="code">ET,3,CONTA172 </span><span class="comment">! 二维面接触，使用燃料外表面</span></span>
+<span class="code-line"><i>31</i><span class="code">KEYOPT,3,2,0 </span><span class="comment">! 增广拉格朗日法</span></span>
+<span class="code-line"><i>32</i><span class="code">KEYOPT,3,5,0 </span><span class="comment">! 不自动消除真实初始间隙</span></span>
+<span class="code-line"><i>33</i><span class="code">KEYOPT,3,12,0 </span><span class="comment">! 标准接触，允许分离，无摩擦</span></span>
+<span class="code-line"><i>34</i><span class="code">R,2,,,1.0,0.001,,-0.001 </span><span class="comment">! 刚度因子1、穿透容差因子0.001、绝对搜索半径1 mm（负号）</span></span>
+<span class="code-line"><i>35</i><span class="code">REAL,2 </span><span class="comment">! 接触与目标共享同一实常数编号</span></span>
+<span class="code-line"><i>36</i><span class="code">CMSEL,S,WALL </span><span class="comment">! 只取格架节点</span></span>
+<span class="code-line"><i>37</i><span class="code">NSEL,R,LOC,X,0.00502 </span><span class="comment">! 目标为格架左侧面</span></span>
+<span class="code-line"><i>38</i><span class="code">TYPE,2 </span><span class="comment">! 指定目标线类型</span></span>
+<span class="code-line"><i>39</i><span class="code">ESURF </span><span class="comment">! 在选定外边界生成目标线</span></span>
+<span class="code-line"><i>40</i><span class="code">ALLSEL,ALL </span><span class="comment">! 恢复所有节点和单元</span></span>
+<span class="code-line"><i>41</i><span class="code">CMSEL,S,FUEL </span><span class="comment">! 只取燃料节点</span></span>
+<span class="code-line"><i>42</i><span class="code">NSEL,R,LOC,X,0.005 </span><span class="comment">! 接触为燃料右侧面</span></span>
+<span class="code-line"><i>43</i><span class="code">TYPE,3 </span><span class="comment">! 指定接触线类型</span></span>
+<span class="code-line"><i>44</i><span class="code">ESURF </span><span class="comment">! 生成朝向格架的接触线</span></span>
+<span class="code-line"><i>45</i><span class="code">ALLSEL,ALL </span><span class="comment">! 恢复所有节点和单元</span></span>
+<span class="code-line"><i>46</i><span class="code">NSEL,S,LOC,Y,0 </span><span class="comment">! 两结构下边均为y对称面</span></span>
+<span class="code-line"><i>47</i><span class="code">D,ALL,UY,0 </span><span class="comment">! 仅法向位移为零，不约束切向热膨胀</span></span>
+<span class="code-line"><i>48</i><span class="code">NSEL,S,LOC,X,0 </span><span class="comment">! 燃料x对称面</span></span>
+<span class="code-line"><i>49</i><span class="code">D,ALL,UX,0 </span><span class="comment">! 仅法向位移为零</span></span>
+<span class="code-line"><i>50</i><span class="code">NSEL,S,LOC,X,0.00602 </span><span class="comment">! 格架外侧真实法向支承</span></span>
+<span class="code-line"><i>51</i><span class="code">D,ALL,UX,0 </span><span class="comment">! 禁止向外运动，不锁死竖直滑移</span></span>
+<span class="code-line"><i>52</i><span class="code">ALLSEL,ALL </span><span class="comment">! 求解前恢复全选择</span></span>
+<span class="code-line"><i>53</i><span class="code">TREF,300 </span><span class="comment">! 两材料无应力参考温度300 K</span></span>
+<span class="code-line"><i>54</i><span class="code">FINISH </span><span class="comment">! 完成前处理</span></span>
+<span class="code-line"><i>55</i><span class="code">*DO,step,1,3 </span><span class="comment">! 三个载荷阶段：间隙、闭合、卸载</span></span>
+<span class="code-line"><i>56</i><span class="code">*IF,step,EQ,1,THEN </span><span class="comment">! 第一阶段燃料温度600 K</span></span>
+<span class="code-line"><i>57</i><span class="code">ft=600 </span><span class="comment">! 温升300 K，预计保持开口</span></span>
+<span class="code-line"><i>58</i><span class="code">*ELSEIF,step,EQ,2,THEN </span><span class="comment">! 第二阶段温度900 K</span></span>
+<span class="code-line"><i>59</i><span class="code">ft=900 </span><span class="comment">! 温升600 K，预计发生接触</span></span>
+<span class="code-line"><i>60</i><span class="code">*ELSE </span><span class="comment">! 第三阶段返回参考温度</span></span>
+<span class="code-line"><i>61</i><span class="code">ft=300 </span><span class="comment">! 检查无摩擦弹性卸载后的重新分离</span></span>
+<span class="code-line"><i>62</i><span class="code">*ENDIF </span><span class="comment">! 完成温度选择</span></span>
+<span class="code-line"><i>63</i><span class="code">/SOLU </span><span class="comment">! 每阶段进入求解器</span></span>
+<span class="code-line"><i>64</i><span class="code">ANTYPE,STATIC </span><span class="comment">! 非线性接触静力分析</span></span>
+<span class="code-line"><i>65</i><span class="code">CMSEL,S,FUEL </span><span class="comment">! 只修改燃料节点温度</span></span>
+<span class="code-line"><i>66</i><span class="code">BF,ALL,TEMP,ft </span><span class="comment">! 燃料统一指定温度，不解导热</span></span>
+<span class="code-line"><i>67</i><span class="code">CMSEL,S,WALL </span><span class="comment">! 格架温度单独指定</span></span>
+<span class="code-line"><i>68</i><span class="code">BF,ALL,TEMP,300 </span><span class="comment">! 格架保持参考温度</span></span>
+<span class="code-line"><i>69</i><span class="code">ALLSEL,ALL </span><span class="comment">! 恢复全部结构和接触</span></span>
+<span class="code-line"><i>70</i><span class="code">TIME,step </span><span class="comment">! 阶段编号作为静态载荷时间</span></span>
+<span class="code-line"><i>71</i><span class="code">AUTOTS,ON </span><span class="comment">! 接触闭合时自动调整子步</span></span>
+<span class="code-line"><i>72</i><span class="code">NSUBST,30,300,10 </span><span class="comment">! 起始30步，最多300步，最少10步</span></span>
+<span class="code-line"><i>73</i><span class="code">NLGEOM,ON </span><span class="comment">! 启用大变形以兼容接触更新</span></span>
+<span class="code-line"><i>74</i><span class="code">CNVTOL,F,,1E-6,2,1 </span><span class="comment">! 力收敛容差更严格，最小参考力1 N适用于本单位制</span></span>
+<span class="code-line"><i>75</i><span class="code">OUTRES,ALL,ALL </span><span class="comment">! 保存完整结果</span></span>
+<span class="code-line"><i>76</i><span class="code">SOLVE </span><span class="comment">! 求解本阶段</span></span>
+<span class="code-line"><i>77</i><span class="code">FINISH </span><span class="comment">! 结束本阶段求解</span></span>
+<span class="code-line"><i>78</i><span class="code">/POST1 </span><span class="comment">! 读取本阶段结果</span></span>
+<span class="code-line"><i>79</i><span class="code">SET,LAST </span><span class="comment">! 最后收敛子步</span></span>
+<span class="code-line"><i>80</i><span class="code">ALLSEL,ALL </span><span class="comment">! 恢复节点后查询几何位置</span></span>
+<span class="code-line"><i>81</i><span class="code">nf=NODE(0.005,0.0025,0) </span><span class="comment">! 燃料接触边中点节点</span></span>
+<span class="code-line"><i>82</i><span class="code">nw=NODE(0.00502,0.0025,0) </span><span class="comment">! 格架目标边中点节点</span></span>
+<span class="code-line"><i>83</i><span class="code">*GET,uf,NODE,nf,U,X </span><span class="comment">! 燃料中点径向位移m</span></span>
+<span class="code-line"><i>84</i><span class="code">*GET,uw,NODE,nw,U,X </span><span class="comment">! 格架中点径向位移m</span></span>
+<span class="code-line"><i>85</i><span class="code">gap=0.00002+uw-uf </span><span class="comment">! 变形后两边中点间距m，负值为数值穿透</span></span>
+<span class="code-line"><i>86</i><span class="code">ESEL,S,TYPE,,3 </span><span class="comment">! 仅选择接触单元，避免混入结构单元</span></span>
+<span class="code-line"><i>87</i><span class="code">pmax=0 </span><span class="comment">! 开口时物理接触压力为零，避免读取不存在的数据</span></span>
+<span class="code-line"><i>88</i><span class="code">*IF,gap,LT,0,THEN </span><span class="comment">! 仅闭合有数值穿透时读取接触结果</span></span>
+<span class="code-line"><i>89</i><span class="code">ETABLE,cp,SMISC,5 </span><span class="comment">! 官方CONTA172元素平均法向压力Pa</span></span>
+<span class="code-line"><i>90</i><span class="code">*GET,nc,ELEM,0,COUNT </span><span class="comment">! 接触单元数</span></span>
+<span class="code-line"><i>91</i><span class="code">*GET,ec,ELEM,0,NUM,MIN </span><span class="comment">! 最小选中接触单元编号</span></span>
+<span class="code-line"><i>92</i><span class="code">pmax=0 </span><span class="comment">! 初始化最大元素平均压力</span></span>
+<span class="code-line"><i>93</i><span class="code">*DO,j,1,nc </span><span class="comment">! 遍历接触单元</span></span>
+<span class="code-line"><i>94</i><span class="code">*GET,pp,ELEM,ec,ETAB,cp </span><span class="comment">! 读取当前单元平均接触压力</span></span>
+<span class="code-line"><i>95</i><span class="code">*IF,pp,GT,pmax,THEN </span><span class="comment">! 更新压力最大值</span></span>
+<span class="code-line"><i>96</i><span class="code">pmax=pp </span><span class="comment">! 保存最大元素平均压力Pa</span></span>
+<span class="code-line"><i>97</i><span class="code">*ENDIF </span><span class="comment">! 结束比较</span></span>
+<span class="code-line"><i>98</i><span class="code">*GET,ec,ELEM,ec,NXTH </span><span class="comment">! 下一个选中接触单元</span></span>
+<span class="code-line"><i>99</i><span class="code">*ENDDO </span><span class="comment">! 结束压力遍历</span></span>
+<span class="code-line"><i>100</i><span class="code">*ENDIF </span><span class="comment">! 开口阶段不强行访问未定义接触压力</span></span>
+<span class="code-line"><i>101</i><span class="code">ALLSEL,ALL </span><span class="comment">! 输出前恢复全模型</span></span>
+<span class="code-line"><i>102</i><span class="code">*CFOPEN,contact_history,csv,,APPEND </span><span class="comment">! 追加温度、间距、压力输出</span></span>
+<span class="code-line"><i>103</i><span class="code">*VWRITE,step,ft,gap,pmax </span><span class="comment">! 下一行四列科学计数格式</span></span>
+<span class="code-line"><i>104</i><span class="code">(4E20.12)</span></span>
+<span class="code-line"><i>105</i><span class="code">*CFCLOS </span><span class="comment">! 关闭输出文件</span></span>
+<span class="code-line"><i>106</i><span class="code">FINISH </span><span class="comment">! 离开后处理</span></span>
+<span class="code-line"><i>107</i><span class="code">*ENDDO </span><span class="comment">! 完成全部载荷阶段</span></span></pre></main><footer class="shell">ANSYS APDL 反应堆热工结构每日学习 · 示例用于建模训练和命令理解</footer></body></html>
