@@ -1,0 +1,215 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07131f">
+<title>第 26 课 · 固定空间网格的燃料温度快照与POD数据检查</title><style>
+:root{--bg:#06111b;--panel:#0d2130;--paper:#f6faf8;--ink:#102936;--muted:#617681;--cyan:#62e0df;--gold:#ffd166;--line:#dce8e7}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#173f50 0,transparent 35%),var(--bg);color:#e9f7f5;font:16px/1.78 Inter,"PingFang SC","Microsoft YaHei",sans-serif}a{color:inherit}.shell{width:min(1060px,calc(100% - 28px));margin:auto}header{padding:56px 0 36px}.back{color:var(--cyan);text-decoration:none;font-weight:800}.eyebrow{margin-top:30px;color:var(--cyan);font-weight:900;letter-spacing:.13em}h1{font-size:clamp(34px,6vw,62px);line-height:1.12;margin:10px 0}.meta{color:#acc4c9}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}.button{padding:11px 16px;border-radius:999px;background:var(--cyan);color:#06212a;text-decoration:none;font-weight:900}.button.secondary{background:transparent;color:var(--cyan);border:1px solid #2a6170}main{background:var(--paper);color:var(--ink);border-radius:22px 22px 0 0;padding:34px clamp(20px,5vw,64px) 72px}.status{border-left:5px solid var(--gold);background:#fff5d5;padding:12px 16px;border-radius:0 9px 9px 0}figure{margin:28px 0 36px}figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:16px;background:#f4faf9}figcaption{color:var(--muted);font-size:13px;margin-top:8px}h2{font-size:24px;margin:34px 0 10px;color:#0c6870}h3{color:#0c6870}p,li{max-width:850px}code{background:#e4efed;border-radius:5px;padding:2px 5px;color:#0b5f67}.commands{display:flex;gap:7px;flex-wrap:wrap;margin:18px 0 28px}.commands span{background:#dcefed;color:#135d63;border-radius:999px;padding:4px 9px;font:13px Consolas,monospace}blockquote{margin:28px 0;border-left:4px solid #e0a92f;background:#fff7dc;padding:13px 16px}pre{overflow:auto;background:#071621;color:#d8efea;padding:18px 0;border-radius:14px;font:14px/1.65 Consolas,"Microsoft YaHei",monospace}.code-line{display:block;min-width:max-content;padding:0 20px}.code-line:hover{background:#102838}.code-line i{display:inline-block;width:36px;margin-right:16px;color:#52707c;font-style:normal;text-align:right;user-select:none}.code-line .code{color:#d8efea}.code-line .comment{color:#84d7a0}footer{color:#8ba5ac;padding:25px 0 42px}@media(max-width:600px){header{padding-top:34px}main{border-radius:16px 16px 0 0}}
+</style></head><body><header class="shell"><a class="back" href="../">← 返回课程首页</a><div class="eyebrow">2026-10-08 · LESSON 26</div><h1>固定空间网格的燃料温度快照与POD数据检查</h1><p class="meta">难度：进阶 · 前置课程：第25课与稳态轴对称导热</p><div class="actions"><a class="button" href="example.inp" download>下载 APDL 示例</a><a class="button secondary" href="model.svg" download>下载模型图</a><a class="button secondary" href="README.md">查看 Markdown 讲义</a></div></header><main class="shell"><p class="status"><strong>验证状态：</strong>已通过 MAPDL 求解<br>本次隔离MAPDL求解返回0，无求解错误。验证表为5行8列，空间快照为729行8列，节点编号/坐标唯一且固定；逐工况温度场、轴向均匀性和外壁边界均已核对。最大中心温升相对解析误差 0.9796%，求解器保留精度下最大整体热平衡误差 7.11e-15。CSV温度输出有限小数位，重新用CSV算热平衡时应允许舍入误差。</p><figure><img src="model.svg" alt="固定空间网格的燃料温度快照与POD数据检查模型示意图"><figcaption>几何、材料区域、载荷和边界条件与本课 example.inp 对应；示意尺寸以图中标注为准。</figcaption></figure><div class="commands"><span>PLANE55</span><span>*DIM</span><span>*DO</span><span>*GET</span><span>NXTH</span><span>BFE</span><span>SF</span><span>*VLEN</span><span>*VWRITE</span></div><h2>今日目标</h2>
+<p>生成完整、节点一致的五工况温度快照，检查它是否真的能作为POD输入。</p>
+<h2>物理问题</h2>
+<p>等效轴对称圆柱，R=4 mm、L=40 mm，SI单位m/W/K。均匀体积热源，两端绝热、外壁对流、Tb=573 K、常导热率；不包含真实包壳、间隙、接触、辐照、相变或应力。教学参数不能作为反应堆安全输入。</p>
+<h2>关键命令</h2>
+<ul>
+<li>PLANE55、KEYOPT(3)=1：轴对称热模型，以完整360°圆柱解释功率。</li>
+<li>*DIM：固定空间映射与五个参数快照。</li>
+<li>*GET,NXTH：按实际节点号遍历，避免假定节点编号连续。</li>
+<li>MP,KXX、BFE,HGEN、SF,CONV：分别更新导热率、体积热源、对流；每次覆盖前一工况。</li>
+<li>ANTYPE,STATIC,NEW：各参数独立求解；不能在循环中/CLEAR删除数组。</li>
+<li>SET,LAST和*GET,TEMP：从本次结果提取节点温度；不存在NODE,0,MAX,TEMP写法。</li>
+<li>*VLEN,1及*VWRITE：逐行导出八列、保留纯格式行。</li>
+</ul>
+<h2>完整脚本</h2>
+<p>```apdl</p>
+<p>/CLEAR,NOSTART ! 只在循环前清理独立模型；m、W、K单位制</p>
+<p>/FILNAME,lesson26 ! 本课前缀</p>
+<p>/PREP7 ! 建立固定网格热模型</p>
+<p>ET,1,PLANE55 ! 四节点热单元</p>
+<p>KEYOPT,1,3,1 ! 轴对称，X为径向、Y为轴向</p>
+<p>rad=0.004 ! 半径4 mm</p>
+<p>alen=0.040 ! 长度40 mm</p>
+<p>tbulk=573 ! 冷却剂温度K</p>
+<p>kcond=3 ! 等效燃料导热率W/(m K)</p>
+<p>MP,KXX,1,kcond ! 常导热教学材料，不含包壳或间隙</p>
+<p>RECTNG,0,rad,0,alen ! 圆柱子午面</p>
+<p>MSHKEY,1 ! 映射网格</p>
+<p>MSHAPE,0,2D ! 四边形网格</p>
+<p>ESIZE,0.0005 ! 名义网格尺寸0.5 mm</p>
+<p>AMESH,ALL ! 只划分一次，所有快照节点顺序相同</p>
+<p>ALLSEL,ALL ! 节点统计前恢复全部选择</p>
+<p>*GET,nnodes,NODE,0,COUNT ! 节点总数</p>
+<p>*DIM,snap,ARRAY,nnodes,8 ! 节点号、r、z与五个参数工况温度</p>
+<p>*DIM,res,ARRAY,5,8 ! q、k、h、中心、外壁、解析中心、温升误差、热平衡误差</p>
+<p>prevnode=0 ! 节点号从0之后开始查找</p>
+<p>*DO,ii,1,nnodes ! 保存真实选中节点编号，允许编号不连续</p>
+<p>*GET,nownd,NODE,prevnode,NXTH ! 获取下一更大选中节点号</p>
+<p>snap(ii,1)=nownd ! 保存节点号，不能用数组行号替代</p>
+<p>snap(ii,2)=NX(nownd) ! 保存径向坐标m</p>
+<p>snap(ii,3)=NY(nownd) ! 保存轴向坐标m</p>
+<p>prevnode=nownd ! 更新遍历位置</p>
+<p>*ENDDO ! 完成节点映射</p>
+<p>FINISH ! 完成固定模型</p>
+<p>*DO,icase,1,5 ! 五个独立参数点，保持几何与节点一致</p>
+<p>qvol=1E8+icase*2E7 ! 生热依次1.2至2.0E8 W/m3</p>
+<p>hcoef=20000 ! 外面对流W/(m2 K)</p>
+<p>/PREP7 ! 更新材料与热载荷</p>
+<p>MP,KXX,1,kcond ! 当前参数的常导热率</p>
+<p>ALLSEL,ALL ! 热源施加全部单元</p>
+<p>BFE,ALL,HGEN,,qvol ! 覆盖前一工况体积热源</p>
+<p>NSEL,S,LOC,X,rad ! 选外壁节点</p>
+<p>SF,ALL,CONV,hcoef,tbulk ! 覆盖当前工况外壁对流，端面自然绝热</p>
+<p>ALLSEL,ALL ! 求解前恢复所有选择</p>
+<p>FINISH ! 完成载荷更新</p>
+<p>/SOLU ! 稳态导热分析</p>
+<p>ANTYPE,STATIC,NEW ! 当前参数新分析，数组保留</p>
+<p>OUTRES,ALL,ALL ! 保存温度</p>
+<p>SOLVE ! 求解本参数点</p>
+<p>FINISH ! 完成求解</p>
+<p>/POST1 ! 读取结果</p>
+<p>SET,LAST ! 本次结果</p>
+<p>ALLSEL,ALL ! 保存所有节点温度</p>
+<p>*DO,ii,1,nnodes ! 按已保存节点映射提取</p>
+<p>nownd=snap(ii,1) ! 真实节点号</p>
+<p>*GET,tnow,NODE,nownd,TEMP ! 本节点温度K</p>
+<p>snap(ii,icase+3)=tnow ! 对应参数列</p>
+<p>*ENDDO ! 完成全场快照</p>
+<p>ncenter=NODE(0,alen/2,0) ! 轴线中点</p>
+<p>nouter=NODE(rad,alen/2,0) ! 外壁中点</p>
+<p>*GET,tc,NODE,ncenter,TEMP ! 中心温度K</p>
+<p>*GET,to,NODE,nouter,TEMP ! 外壁温度K</p>
+<p>texact=tbulk+qvol*rad/(2*hcoef)+qvol*rad**2/(4*kcond) ! 解析中心温度K</p>
+<p>res(icase,1)=qvol ! 生热参数</p>
+<p>res(icase,2)=kcond ! 导热率</p>
+<p>res(icase,3)=hcoef ! 对流边界</p>
+<p>res(icase,4)=tc ! 数值中心温度</p>
+<p>res(icase,5)=to ! 数值外壁温度</p>
+<p>res(icase,6)=texact ! 解析参考温度，非数值结果</p>
+<p>res(icase,7)=ABS(tc-texact)/(texact-tbulk) ! 温升相对误差</p>
+<p>res(icase,8)=ABS(hcoef*2*rad*(to-tbulk)-qvol*rad**2)/(qvol*rad**2) ! 轴向均匀时热平衡误差</p>
+<p>FINISH ! 结束当前工况</p>
+<p>*ENDDO ! 完成五个参数点</p>
+<p>*CFOPEN,parameter_check,csv ! 参数及验证指标输出</p>
+<p>*DO,ii,1,5 ! 逐工况一行</p>
+<p>*VLEN,1 ! 避免自动向量重复输出</p>
+<p>*VWRITE,res(ii,1),res(ii,2),res(ii,3),res(ii,4),res(ii,5),res(ii,6),res(ii,7),res(ii,8) ! 下一行纯格式，八列</p>
+<p>(E13.6,7(&#x27;,&#x27;,E13.6))</p>
+<p>*ENDDO ! 完成验证表</p>
+<p>*CFCLOS ! 关闭参数表</p>
+<p>*CFOPEN,field_snapshots,csv ! 节点号、r、z、五列完整温度场</p>
+<p>*DO,ii,1,nnodes ! 按固定节点顺序逐行输出</p>
+<p>*VLEN,1 ! 本次只写一行</p>
+<p>*VWRITE,snap(ii,1),snap(ii,2),snap(ii,3),snap(ii,4),snap(ii,5),snap(ii,6),snap(ii,7),snap(ii,8) ! 下一行纯格式</p>
+<p>(E13.6,7(&#x27;,&#x27;,E13.6))</p>
+<p>*ENDDO ! 完成空间快照输出</p>
+<p>*CFCLOS ! 关闭空间快照</p>
+<p>FINISH ! 批处理结束</p>
+<p>```</p>
+<h2>预期结果</h2>
+<p>公式：Ts=Tb+qR/(2h)；Tc=Ts+qR²/(4k)。固定k=3、h=20000时，q=1.2–2.0e8对应解析Tc=745.0–859.667 K。参数扫描工况则逐行使用表内k/h求解析值，不套用固定k参考范围。这些是解析参考值，本次实际求解数值与误差见下文验证状态。</p>
+<p>field_snapshots.csv应为节点数行、8列：node,r,z,T1…T5；parameter_check.csv应5行8列：q,k,h,Tc,Ts,Tc_exact,err_dT,err_balance。保持各列与参数表对应。最大/平均两个标量不能充当完整空间快照。</p>
+<h2>验证清单</h2>
+<ul>
+<li>单位和轴对称360°热功率一致；检查外壁选择与两端自然绝热。</li>
+<li>解析温升和热平衡逐工况对照，误差不以绝对K归一化掩盖。</li>
+<li>至少用第27课三网格结果确定当前网格是否够用，再生成训练快照。</li>
+<li>CSV节点号/坐标固定，列数和工况一致；缺结果时不得构造“求解成功”的温度场。</li>
+<li>POD在外部建立时，按有限元质量或轴对称体积加权；当前脚本未训练、未投影、未提供在线ROM。只改变线性热源可能得到近似秩1温升快照，不用于证明通用POD能力。</li>
+</ul>
+<h2>常见错误</h2>
+<ol>
+<li>在*DO内部/CLEAR：删除循环参数及数组；模型仅建立一次。</li>
+<li>将包壳/间隙赋同一材料：本课明确使用无包壳等效棒，真实分区需逐区赋材和界面核验。</li>
+<li>只有中心或平均温度就声称完成POD：输出全空间快照、元数据及独立验证；能量99%不是热点误差保证。</li>
+</ol>
+<h2>练习题</h2>
+<p>参数练习：留出中间参数工况，计算温升、峰值及守恒误差。反应堆扩展：加入控制棒k=15的等效材料另建数据库，不混淆材料号；在真实燃料—包壳接触模型中增加状态标签及外推回退。</p>
+<h2>实际求解验证</h2>
+<p>本次隔离MAPDL求解返回0，无求解错误。验证表为5行8列，空间快照为729行8列，节点编号/坐标唯一且固定；逐工况温度场、轴向均匀性和外壁边界均已核对。最大中心温升相对解析误差 0.9796%，求解器保留精度下最大整体热平衡误差 7.11e-15。CSV温度输出有限小数位，重新用CSV算热平衡时应允许舍入误差。</p>
+<p>| q（W/m³） | k（W/(m·K)） | h（W/(m²·K)） | 数值中心T（K） | 解析中心T（K） | 温升误差 |</p>
+<p>| --- | --- | --- | --- | --- | --- |</p>
+<p>| 1.20e+08 | 3 | 20000 | 746.685 | 745.000 | 0.980% |</p>
+<p>| 1.40e+08 | 3 | 20000 | 775.632 | 773.667 | 0.980% |</p>
+<p>| 1.60e+08 | 3 | 20000 | 804.580 | 802.333 | 0.980% |</p>
+<p>| 1.80e+08 | 3 | 20000 | 833.527 | 831.000 | 0.980% |</p>
+<p>| 2.00e+08 | 3 | 20000 | 862.475 | 859.667 | 0.980% |</p>
+<p>0.5 mm网格对本课均匀常物性解析问题满足演示用1%温升误差限；第27课最后一次加密的燃料温升仍变化约2.27%，不能据此宣称严格网格独立。快照只验证数据准备，未训练或运行POD在线模型；线性恒物性温度剖面复杂度有限。</p>
+<p>本地证据：validation/solver.out、上述CSV及validation/validation-summary.json。</p><h2>完整 example.inp（逐行中文注释）</h2><pre><span class="code-line"><i>01</i><span class="code">/CLEAR,NOSTART </span><span class="comment">! 只在循环前清理独立模型；m、W、K单位制</span></span>
+<span class="code-line"><i>02</i><span class="code">/FILNAME,lesson26 </span><span class="comment">! 本课前缀</span></span>
+<span class="code-line"><i>03</i><span class="code">/PREP7 </span><span class="comment">! 建立固定网格热模型</span></span>
+<span class="code-line"><i>04</i><span class="code">ET,1,PLANE55 </span><span class="comment">! 四节点热单元</span></span>
+<span class="code-line"><i>05</i><span class="code">KEYOPT,1,3,1 </span><span class="comment">! 轴对称，X为径向、Y为轴向</span></span>
+<span class="code-line"><i>06</i><span class="code">rad=0.004 </span><span class="comment">! 半径4 mm</span></span>
+<span class="code-line"><i>07</i><span class="code">alen=0.040 </span><span class="comment">! 长度40 mm</span></span>
+<span class="code-line"><i>08</i><span class="code">tbulk=573 </span><span class="comment">! 冷却剂温度K</span></span>
+<span class="code-line"><i>09</i><span class="code">kcond=3 </span><span class="comment">! 等效燃料导热率W/(m K)</span></span>
+<span class="code-line"><i>10</i><span class="code">MP,KXX,1,kcond </span><span class="comment">! 常导热教学材料，不含包壳或间隙</span></span>
+<span class="code-line"><i>11</i><span class="code">RECTNG,0,rad,0,alen </span><span class="comment">! 圆柱子午面</span></span>
+<span class="code-line"><i>12</i><span class="code">MSHKEY,1 </span><span class="comment">! 映射网格</span></span>
+<span class="code-line"><i>13</i><span class="code">MSHAPE,0,2D </span><span class="comment">! 四边形网格</span></span>
+<span class="code-line"><i>14</i><span class="code">ESIZE,0.0005 </span><span class="comment">! 名义网格尺寸0.5 mm</span></span>
+<span class="code-line"><i>15</i><span class="code">AMESH,ALL </span><span class="comment">! 只划分一次，所有快照节点顺序相同</span></span>
+<span class="code-line"><i>16</i><span class="code">ALLSEL,ALL </span><span class="comment">! 节点统计前恢复全部选择</span></span>
+<span class="code-line"><i>17</i><span class="code">*GET,nnodes,NODE,0,COUNT </span><span class="comment">! 节点总数</span></span>
+<span class="code-line"><i>18</i><span class="code">*DIM,snap,ARRAY,nnodes,8 </span><span class="comment">! 节点号、r、z与五个参数工况温度</span></span>
+<span class="code-line"><i>19</i><span class="code">*DIM,res,ARRAY,5,8 </span><span class="comment">! q、k、h、中心、外壁、解析中心、温升误差、热平衡误差</span></span>
+<span class="code-line"><i>20</i><span class="code">prevnode=0 </span><span class="comment">! 节点号从0之后开始查找</span></span>
+<span class="code-line"><i>21</i><span class="code">*DO,ii,1,nnodes </span><span class="comment">! 保存真实选中节点编号，允许编号不连续</span></span>
+<span class="code-line"><i>22</i><span class="code">*GET,nownd,NODE,prevnode,NXTH </span><span class="comment">! 获取下一更大选中节点号</span></span>
+<span class="code-line"><i>23</i><span class="code">snap(ii,1)=nownd </span><span class="comment">! 保存节点号，不能用数组行号替代</span></span>
+<span class="code-line"><i>24</i><span class="code">snap(ii,2)=NX(nownd) </span><span class="comment">! 保存径向坐标m</span></span>
+<span class="code-line"><i>25</i><span class="code">snap(ii,3)=NY(nownd) </span><span class="comment">! 保存轴向坐标m</span></span>
+<span class="code-line"><i>26</i><span class="code">prevnode=nownd </span><span class="comment">! 更新遍历位置</span></span>
+<span class="code-line"><i>27</i><span class="code">*ENDDO </span><span class="comment">! 完成节点映射</span></span>
+<span class="code-line"><i>28</i><span class="code">FINISH </span><span class="comment">! 完成固定模型</span></span>
+<span class="code-line"><i>29</i><span class="code">*DO,icase,1,5 </span><span class="comment">! 五个独立参数点，保持几何与节点一致</span></span>
+<span class="code-line"><i>30</i><span class="code">qvol=1E8+icase*2E7 </span><span class="comment">! 生热依次1.2至2.0E8 W/m3</span></span>
+<span class="code-line"><i>31</i><span class="code">hcoef=20000 </span><span class="comment">! 外面对流W/(m2 K)</span></span>
+<span class="code-line"><i>32</i><span class="code"></span></span>
+<span class="code-line"><i>33</i><span class="code">/PREP7 </span><span class="comment">! 更新材料与热载荷</span></span>
+<span class="code-line"><i>34</i><span class="code">MP,KXX,1,kcond </span><span class="comment">! 当前参数的常导热率</span></span>
+<span class="code-line"><i>35</i><span class="code">ALLSEL,ALL </span><span class="comment">! 热源施加全部单元</span></span>
+<span class="code-line"><i>36</i><span class="code">BFE,ALL,HGEN,,qvol </span><span class="comment">! 覆盖前一工况体积热源</span></span>
+<span class="code-line"><i>37</i><span class="code">NSEL,S,LOC,X,rad </span><span class="comment">! 选外壁节点</span></span>
+<span class="code-line"><i>38</i><span class="code">SF,ALL,CONV,hcoef,tbulk </span><span class="comment">! 覆盖当前工况外壁对流，端面自然绝热</span></span>
+<span class="code-line"><i>39</i><span class="code">ALLSEL,ALL </span><span class="comment">! 求解前恢复所有选择</span></span>
+<span class="code-line"><i>40</i><span class="code">FINISH </span><span class="comment">! 完成载荷更新</span></span>
+<span class="code-line"><i>41</i><span class="code">/SOLU </span><span class="comment">! 稳态导热分析</span></span>
+<span class="code-line"><i>42</i><span class="code">ANTYPE,STATIC,NEW </span><span class="comment">! 当前参数新分析，数组保留</span></span>
+<span class="code-line"><i>43</i><span class="code">OUTRES,ALL,ALL </span><span class="comment">! 保存温度</span></span>
+<span class="code-line"><i>44</i><span class="code">SOLVE </span><span class="comment">! 求解本参数点</span></span>
+<span class="code-line"><i>45</i><span class="code">FINISH </span><span class="comment">! 完成求解</span></span>
+<span class="code-line"><i>46</i><span class="code">/POST1 </span><span class="comment">! 读取结果</span></span>
+<span class="code-line"><i>47</i><span class="code">SET,LAST </span><span class="comment">! 本次结果</span></span>
+<span class="code-line"><i>48</i><span class="code">ALLSEL,ALL </span><span class="comment">! 保存所有节点温度</span></span>
+<span class="code-line"><i>49</i><span class="code">*DO,ii,1,nnodes </span><span class="comment">! 按已保存节点映射提取</span></span>
+<span class="code-line"><i>50</i><span class="code">nownd=snap(ii,1) </span><span class="comment">! 真实节点号</span></span>
+<span class="code-line"><i>51</i><span class="code">*GET,tnow,NODE,nownd,TEMP </span><span class="comment">! 本节点温度K</span></span>
+<span class="code-line"><i>52</i><span class="code">snap(ii,icase+3)=tnow </span><span class="comment">! 对应参数列</span></span>
+<span class="code-line"><i>53</i><span class="code">*ENDDO </span><span class="comment">! 完成全场快照</span></span>
+<span class="code-line"><i>54</i><span class="code">ncenter=NODE(0,alen/2,0) </span><span class="comment">! 轴线中点</span></span>
+<span class="code-line"><i>55</i><span class="code">nouter=NODE(rad,alen/2,0) </span><span class="comment">! 外壁中点</span></span>
+<span class="code-line"><i>56</i><span class="code">*GET,tc,NODE,ncenter,TEMP </span><span class="comment">! 中心温度K</span></span>
+<span class="code-line"><i>57</i><span class="code">*GET,to,NODE,nouter,TEMP </span><span class="comment">! 外壁温度K</span></span>
+<span class="code-line"><i>58</i><span class="code">texact=tbulk+qvol*rad/(2*hcoef)+qvol*rad**2/(4*kcond) </span><span class="comment">! 解析中心温度K</span></span>
+<span class="code-line"><i>59</i><span class="code">res(icase,1)=qvol </span><span class="comment">! 生热参数</span></span>
+<span class="code-line"><i>60</i><span class="code">res(icase,2)=kcond </span><span class="comment">! 导热率</span></span>
+<span class="code-line"><i>61</i><span class="code">res(icase,3)=hcoef </span><span class="comment">! 对流边界</span></span>
+<span class="code-line"><i>62</i><span class="code">res(icase,4)=tc </span><span class="comment">! 数值中心温度</span></span>
+<span class="code-line"><i>63</i><span class="code">res(icase,5)=to </span><span class="comment">! 数值外壁温度</span></span>
+<span class="code-line"><i>64</i><span class="code">res(icase,6)=texact </span><span class="comment">! 解析参考温度，非数值结果</span></span>
+<span class="code-line"><i>65</i><span class="code">res(icase,7)=ABS(tc-texact)/(texact-tbulk) </span><span class="comment">! 温升相对误差</span></span>
+<span class="code-line"><i>66</i><span class="code">res(icase,8)=ABS(hcoef*2*rad*(to-tbulk)-qvol*rad**2)/(qvol*rad**2) </span><span class="comment">! 轴向均匀时热平衡误差</span></span>
+<span class="code-line"><i>67</i><span class="code">FINISH </span><span class="comment">! 结束当前工况</span></span>
+<span class="code-line"><i>68</i><span class="code">*ENDDO </span><span class="comment">! 完成五个参数点</span></span>
+<span class="code-line"><i>69</i><span class="code">*CFOPEN,parameter_check,csv </span><span class="comment">! 参数及验证指标输出</span></span>
+<span class="code-line"><i>70</i><span class="code">*DO,ii,1,5 </span><span class="comment">! 逐工况一行</span></span>
+<span class="code-line"><i>71</i><span class="code">*VLEN,1 </span><span class="comment">! 避免自动向量重复输出</span></span>
+<span class="code-line"><i>72</i><span class="code">*VWRITE,res(ii,1),res(ii,2),res(ii,3),res(ii,4),res(ii,5),res(ii,6),res(ii,7),res(ii,8) </span><span class="comment">! 下一行纯格式，八列</span></span>
+<span class="code-line"><i>73</i><span class="code">(E13.6,7(&#x27;,&#x27;,E13.6))</span></span>
+<span class="code-line"><i>74</i><span class="code">*ENDDO </span><span class="comment">! 完成验证表</span></span>
+<span class="code-line"><i>75</i><span class="code">*CFCLOS </span><span class="comment">! 关闭参数表</span></span>
+<span class="code-line"><i>76</i><span class="code">*CFOPEN,field_snapshots,csv </span><span class="comment">! 节点号、r、z、五列完整温度场</span></span>
+<span class="code-line"><i>77</i><span class="code">*DO,ii,1,nnodes </span><span class="comment">! 按固定节点顺序逐行输出</span></span>
+<span class="code-line"><i>78</i><span class="code">*VLEN,1 </span><span class="comment">! 本次只写一行</span></span>
+<span class="code-line"><i>79</i><span class="code">*VWRITE,snap(ii,1),snap(ii,2),snap(ii,3),snap(ii,4),snap(ii,5),snap(ii,6),snap(ii,7),snap(ii,8) </span><span class="comment">! 下一行纯格式</span></span>
+<span class="code-line"><i>80</i><span class="code">(E13.6,7(&#x27;,&#x27;,E13.6))</span></span>
+<span class="code-line"><i>81</i><span class="code">*ENDDO </span><span class="comment">! 完成空间快照输出</span></span>
+<span class="code-line"><i>82</i><span class="code">*CFCLOS </span><span class="comment">! 关闭空间快照</span></span>
+<span class="code-line"><i>83</i><span class="code">FINISH </span><span class="comment">! 批处理结束</span></span></pre></main><footer class="shell">ANSYS APDL 反应堆热工结构每日学习 · 示例用于建模训练和命令理解</footer></body></html>

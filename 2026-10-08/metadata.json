@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-08",
+  "lesson": 26,
+  "topic": "固定空间网格的燃料温度快照与POD数据检查",
+  "difficulty": "进阶",
+  "commands": [
+    "PLANE55",
+    "*DIM",
+    "*DO",
+    "*GET",
+    "NXTH",
+    "BFE",
+    "SF",
+    "*VLEN",
+    "*VWRITE"
+  ],
+  "prerequisite": "第25课与稳态轴对称导热",
+  "model_assumptions": "等效燃料；固定网格、q=1.2–2.0e8，k=3，h=20000。",
+  "validation_status": "solved",
+  "validation_note": "本次隔离MAPDL求解返回0，无求解错误。验证表为5行8列，空间快照为729行8列，节点编号/坐标唯一且固定；逐工况温度场、轴向均匀性和外壁边界均已核对。最大中心温升相对解析误差 0.9796%，求解器保留精度下最大整体热平衡误差 7.11e-15。CSV温度输出有限小数位，重新用CSV算热平衡时应允许舍入误差。",
+  "supplemental_label": "",
+  "generated_at": "2026-10-10T12:23:25.274548+08:00",
+  "references": [
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_cmd/Hlp_C_GET.html",
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_elem/Hlp_E_PLANE55.html"
+  ],
+  "validation_exit_code": 0,
+  "validation_log": "validation/solver.out",
+  "validation_summary": "validation/validation-summary.json",
+  "validated_input_sha256": "ce666eb63a8980b70512d93ab4d5466f26c669d94bb5b6d89823042a4da7dc70"
+}
