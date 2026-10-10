@@ -16,8 +16,8 @@
     "*VWRITE",
     "*VLEN"
   ],
-  "validation_status": "static_only",
-  "validation_note": "隔离MAPDL返回7：许可服务不可用（FlexNet -97,121）；已完成静态检查，未执行求解。",
+  "validation_status": "solved",
+  "validation_note": "本次隔离MAPDL实际完成两种材料各三网格求解，返回0，无求解错误；CSV为6行9列。误差随加密单调减小。",
   "prerequisite": "第26课及稳态轴对称导热基础",
   "model_assumptions": "常物性、均匀热源、两端绝热、仅外面对流；教学等效棒，不含包壳或间隙。",
   "references": [
@@ -25,5 +25,8 @@
     "https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_cmd/Hlp_C_SF.html",
     "https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_cmd/Hlp_C_ADELE.html"
   ],
-  "validation_log": "validation/solver.out"
+  "validation_log": "validation/solver.out",
+  "validation_exit_code": 0,
+  "validation_summary": "validation/validation-summary.json",
+  "validated_input_sha256": "a17563a1d4fbddf749d522b899526bc100cd6c39251f371ddf269b7236ad6eaa"
 }
