@@ -1,0 +1,87 @@
+/CLEAR,NOSTART ! 仅用于独立批处理实例；m、W、K单位制
+/FILNAME,lesson27 ! 本课结果文件前缀
+/PREP7 ! 创建轴对称稳态导热模型
+ET,1,PLANE55 ! 四节点二维热单元
+KEYOPT,1,3,1 ! 轴对称；X为半径，Y为轴线
+MP,KXX,1,3 ! 等效燃料导热率3 W/(m K)，教学常数
+MP,KXX,2,15 ! 等效控制棒吸收体导热率15 W/(m K)
+rad=0.004 ! 圆柱半径4 mm
+alen=0.040 ! 圆柱长度40 mm
+hcoef=20000 ! 外表面对流系数W/(m2 K)
+tbulk=573 ! 冷却剂温度K
+pi=ACOS(-1) ! 圆周率，角度函数采用默认弧度
+*DIM,res,ARRAY,6,9 ! 六行：工况、尺寸、节点数、中心温度、外温、解析中心温度、温升相对误差、热平衡误差、网格变化
+runid=0 ! 计算次数计数器
+FINISH ! 结束初始化
+*DO,icase,1,2 ! 两个等效材料工况，均不含包壳和间隙
+*IF,icase,EQ,1,THEN ! 燃料棒工况
+qvol=2E8 ! 体积热源W/m3
+kcond=3 ! 对应燃料导热率
+*ELSE ! 控制棒吸收体工况
+qvol=5E7 ! 体积热源W/m3，教学假设
+kcond=15 ! 对应吸收体导热率
+*ENDIF ! 完成工况选择
+*DO,igrid,1,3 ! 网格尺寸依次为2、1、0.5 mm
+runid=runid+1 ! 每次网格计算占一行
+hmesh=rad/(2**igrid) ! 径向和轴向名义网格尺寸m
+/PREP7 ! 开始本次网格重建
+ALLSEL,ALL ! 清理和划分前恢复所有选择
+*IF,runid,GT,1,THEN ! 首次运行没有旧网格，不执行清除
+ACLEAR,ALL ! 删除旧面积网格，保留数组和循环参数
+ADELE,ALL,,,1 ! 删除已清网格面积及其独占线、关键点
+*ENDIF ! 完成旧模型清理
+RECTNG,0,rad,0,alen ! 轴对称圆柱子午面矩形
+TYPE,1 ! 选热单元
+MAT,icase ! 当前工况的材料号
+MSHKEY,1 ! 映射四边形网格
+MSHAPE,0,2D ! 四边形形状
+ESIZE,hmesh ! 本次名义网格尺寸m
+AMESH,ALL ! 对当前唯一面积划分网格
+ALLSEL,ALL ! 热源施加到全部单元
+BFE,ALL,HGEN,,qvol ! 全部单元均匀体积生热W/m3
+NSEL,S,LOC,X,rad ! 仅外圆柱表面节点；不选轴线或端面内部
+SF,ALL,CONV,hcoef,tbulk ! 对流系数和冷却剂温度，端面自然绝热
+ALLSEL,ALL ! 求解前恢复全部节点和单元
+*GET,nnodes,NODE,0,COUNT ! 记录当前网格节点数
+FINISH ! 离开前处理
+/SOLU ! 求解当前工况
+ANTYPE,STATIC,NEW ! 新的稳态热分析，不能沿用上一网格结果
+OUTRES,ALL,ALL ! 保存结果
+SOLVE ! 求解温度场
+FINISH ! 结束求解
+/POST1 ! 后处理
+SET,LAST ! 读取本次结果
+ALLSEL,ALL ! 节点定位前恢复全部节点
+ncenter=NODE(0,alen/2,0) ! 轴线中点节点，三套网格均包含该位置
+nouter=NODE(rad,alen/2,0) ! 外圆柱中点节点
+*GET,tc,NODE,ncenter,TEMP ! 当前网格中心温度K
+*GET,to,NODE,nouter,TEMP ! 当前网格外表面温度K
+texact=tbulk+qvol*rad/(2*hcoef)+qvol*rad**2/(4*kcond) ! 解析中心温度K
+qinput=qvol*pi*rad**2*alen ! 整根圆柱输入热功率W；360度轴对称
+qout=hcoef*2*pi*rad*alen*(to-tbulk) ! 轴向均匀条件下整根圆柱散热W
+errtemp=ABS(tc-texact)/(texact-tbulk) ! 用温升归一化，避免绝对温度掩盖误差
+errheat=ABS(qout-qinput)/qinput ! 热平衡相对误差
+change=-1 ! 第一套网格无前序比较，以-1明确表示
+*IF,igrid,GT,1,THEN ! 与同材料前一套粗网格比较
+change=ABS(tc-res(runid-1,4))/(texact-tbulk) ! 网格变化的温升相对量
+*ENDIF ! 完成粗细网格比较
+res(runid,1)=icase ! 第1列工况号
+res(runid,2)=hmesh ! 第2列网格尺寸m
+res(runid,3)=nnodes ! 第3列节点数
+res(runid,4)=tc ! 第4列中心温度K
+res(runid,5)=to ! 第5列外温K
+res(runid,6)=texact ! 第6列解析中心温度K
+res(runid,7)=errtemp ! 第7列解析温升相对误差
+res(runid,8)=errheat ! 第8列热平衡相对误差
+res(runid,9)=change ! 第9列粗细网格变化
+FINISH ! 结束本次后处理
+*ENDDO ! 完成三套网格
+*ENDDO ! 完成两类等效棒
+*CFOPEN,mesh_study,csv ! 所有求解完成后一次性输出，覆盖旧文件
+*DO,irow,1,6 ! 逐行导出九列结果
+*VLEN,1 ! 每次只输出当前一行，避免数组自动向量循环重复输出
+*VWRITE,res(irow,1),res(irow,2),res(irow,3),res(irow,4),res(irow,5),res(irow,6),res(irow,7),res(irow,8),res(irow,9) ! 紧邻下一行是九列CSV纯格式，不追加注释
+(E13.6,8(',',E13.6))
+*ENDDO ! 完成六行输出
+*CFCLOS ! 关闭结果文件
+FINISH ! 本批处理结束

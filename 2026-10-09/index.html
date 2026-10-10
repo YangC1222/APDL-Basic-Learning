@@ -1,0 +1,230 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#07131f">
+<title>第 27 课 · 燃料棒与控制棒案例的网格独立性自动循环</title><style>
+:root{--bg:#06111b;--panel:#0d2130;--paper:#f6faf8;--ink:#102936;--muted:#617681;--cyan:#62e0df;--gold:#ffd166;--line:#dce8e7}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% 0,#173f50 0,transparent 35%),var(--bg);color:#e9f7f5;font:16px/1.78 Inter,"PingFang SC","Microsoft YaHei",sans-serif}a{color:inherit}.shell{width:min(1060px,calc(100% - 28px));margin:auto}header{padding:56px 0 36px}.back{color:var(--cyan);text-decoration:none;font-weight:800}.eyebrow{margin-top:30px;color:var(--cyan);font-weight:900;letter-spacing:.13em}h1{font-size:clamp(34px,6vw,62px);line-height:1.12;margin:10px 0}.meta{color:#acc4c9}.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:24px}.button{padding:11px 16px;border-radius:999px;background:var(--cyan);color:#06212a;text-decoration:none;font-weight:900}.button.secondary{background:transparent;color:var(--cyan);border:1px solid #2a6170}main{background:var(--paper);color:var(--ink);border-radius:22px 22px 0 0;padding:34px clamp(20px,5vw,64px) 72px}.status{border-left:5px solid var(--gold);background:#fff5d5;padding:12px 16px;border-radius:0 9px 9px 0}figure{margin:28px 0 36px}figure img{display:block;width:100%;height:auto;border:1px solid var(--line);border-radius:16px;background:#f4faf9}figcaption{color:var(--muted);font-size:13px;margin-top:8px}h2{font-size:24px;margin:34px 0 10px;color:#0c6870}h3{color:#0c6870}p,li{max-width:850px}code{background:#e4efed;border-radius:5px;padding:2px 5px;color:#0b5f67}.commands{display:flex;gap:7px;flex-wrap:wrap;margin:18px 0 28px}.commands span{background:#dcefed;color:#135d63;border-radius:999px;padding:4px 9px;font:13px Consolas,monospace}blockquote{margin:28px 0;border-left:4px solid #e0a92f;background:#fff7dc;padding:13px 16px}pre{overflow:auto;background:#071621;color:#d8efea;padding:18px 0;border-radius:14px;font:14px/1.65 Consolas,"Microsoft YaHei",monospace}.code-line{display:block;min-width:max-content;padding:0 20px}.code-line:hover{background:#102838}.code-line i{display:inline-block;width:36px;margin-right:16px;color:#52707c;font-style:normal;text-align:right;user-select:none}.code-line .code{color:#d8efea}.code-line .comment{color:#84d7a0}footer{color:#8ba5ac;padding:25px 0 42px}@media(max-width:600px){header{padding-top:34px}main{border-radius:16px 16px 0 0}}
+</style></head><body><header class="shell"><a class="back" href="../">← 返回课程首页</a><div class="eyebrow">2026-10-09 · LESSON 27</div><h1>燃料棒与控制棒案例的网格独立性自动循环</h1><p class="meta">难度：进阶 · 前置课程：第26课及稳态轴对称导热基础</p><div class="actions"><a class="button" href="example.inp" download>下载 APDL 示例</a><a class="button secondary" href="model.svg" download>下载模型图</a><a class="button secondary" href="README.md">查看 Markdown 讲义</a></div></header><main class="shell"><p class="status"><strong>验证状态：</strong>已静态检查，尚未运行 MAPDL<br>隔离MAPDL返回7：许可服务不可用（FlexNet -97,121）；已完成静态检查，未执行求解。</p><figure><img src="model.svg" alt="燃料棒与控制棒案例的网格独立性自动循环模型示意图"><figcaption>几何、材料区域、载荷和边界条件与本课 example.inp 对应；示意尺寸以图中标注为准。</figcaption></figure><div class="commands"><span>PLANE55</span><span>KEYOPT</span><span>*DO</span><span>*DIM</span><span>ACLEAR</span><span>ADELE</span><span>BFE</span><span>SF</span><span>*GET</span><span>*VWRITE</span><span>*VLEN</span></div><p>2026-10-09</p>
+<h2>今日目标</h2>
+<p>自动完成两类等效圆柱的三套网格计算，用解析温升误差和热平衡检查收敛。</p>
+<h2>物理问题</h2>
+<p>用轴对称圆柱代表等效燃料棒和控制棒吸收体，半径4 mm、长度40 mm。X为径向，Y为轴向，模型绕Y轴旋转360°。外表面对流，h=20000 W/(m²·K)，冷却剂573 K；两端绝热。采用常导热率和均匀体积热源：燃料k=3 W/(m·K)、qᵥ=2×10⁸ W/m³；吸收体k=15 W/(m·K)、qᵥ=5×10⁷ W/m³。</p>
+<p>这些参数仅为教学假设。模型不含包壳、间隙、温度依赖性、辐照或轴向功率变化；不代表真实棒温度限值。两类材料分别计算，不在同一圆柱中混合。</p>
+<h2>关键命令</h2>
+<ul>
+<li><code>PLANE55 / KEYOPT,1,3,1</code>：四节点轴对称热单元，轴线为Y；不是平面薄板。</li>
+<li><code>*DO / *DIM</code>：双循环计算六个工况，保留九列结果。</li>
+<li><code>ACLEAR / ADELE</code>：重建网格时仅清除旧面积网格和几何，保留材料、数组及循环参数。</li>
+<li><code>RECTNG / MSHKEY / ESIZE</code>：重建圆柱子午面及2、1、0.5 mm映射网格。</li>
+<li><code>BFE,HGEN</code>：全体单元施加体积热源W/m³。</li>
+<li><code>NSEL / SF,CONV</code>：只选外表面，依次输入h与冷却剂温度；端面无外加热流。</li>
+<li><code>ANTYPE,STATIC,NEW</code>：每次网格重新求解稳态热分析。</li>
+<li><code>NODE / *GET</code>：读取两套固定物理位置的温度，不能比较不同位置的节点编号。</li>
+<li><code>*VWRITE</code>：输出CSV；*VLEN,1限制每次写一行，九列总宽125字符，低于128字符限制；下一行格式描述符保持纯格式，不能附加注释。</li>
+</ul>
+<h2>完整脚本</h2>
+<p>```apdl</p>
+<p>/CLEAR,NOSTART ! 仅用于独立批处理实例；m、W、K单位制</p>
+<p>/FILNAME,lesson27 ! 本课结果文件前缀</p>
+<p>/PREP7 ! 创建轴对称稳态导热模型</p>
+<p>ET,1,PLANE55 ! 四节点二维热单元</p>
+<p>KEYOPT,1,3,1 ! 轴对称；X为半径，Y为轴线</p>
+<p>MP,KXX,1,3 ! 等效燃料导热率3 W/(m K)，教学常数</p>
+<p>MP,KXX,2,15 ! 等效控制棒吸收体导热率15 W/(m K)</p>
+<p>rad=0.004 ! 圆柱半径4 mm</p>
+<p>alen=0.040 ! 圆柱长度40 mm</p>
+<p>hcoef=20000 ! 外表面对流系数W/(m2 K)</p>
+<p>tbulk=573 ! 冷却剂温度K</p>
+<p>pi=ACOS(-1) ! 圆周率，角度函数采用默认弧度</p>
+<p>*DIM,res,ARRAY,6,9 ! 六行：工况、尺寸、节点数、中心温度、外温、解析中心温度、温升相对误差、热平衡误差、网格变化</p>
+<p>runid=0 ! 计算次数计数器</p>
+<p>FINISH ! 结束初始化</p>
+<p>*DO,icase,1,2 ! 两个等效材料工况，均不含包壳和间隙</p>
+<p>*IF,icase,EQ,1,THEN ! 燃料棒工况</p>
+<p>qvol=2E8 ! 体积热源W/m3</p>
+<p>kcond=3 ! 对应燃料导热率</p>
+<p>*ELSE ! 控制棒吸收体工况</p>
+<p>qvol=5E7 ! 体积热源W/m3，教学假设</p>
+<p>kcond=15 ! 对应吸收体导热率</p>
+<p>*ENDIF ! 完成工况选择</p>
+<p>*DO,igrid,1,3 ! 网格尺寸依次为2、1、0.5 mm</p>
+<p>runid=runid+1 ! 每次网格计算占一行</p>
+<p>hmesh=rad/(2**igrid) ! 径向和轴向名义网格尺寸m</p>
+<p>/PREP7 ! 开始本次网格重建</p>
+<p>ALLSEL,ALL ! 清理和划分前恢复所有选择</p>
+<p>*IF,runid,GT,1,THEN ! 首次运行没有旧网格，不执行清除</p>
+<p>ACLEAR,ALL ! 删除旧面积网格，保留数组和循环参数</p>
+<p>ADELE,ALL,,,1 ! 删除已清网格面积及其独占线、关键点</p>
+<p>*ENDIF ! 完成旧模型清理</p>
+<p>RECTNG,0,rad,0,alen ! 轴对称圆柱子午面矩形</p>
+<p>TYPE,1 ! 选热单元</p>
+<p>MAT,icase ! 当前工况的材料号</p>
+<p>MSHKEY,1 ! 映射四边形网格</p>
+<p>MSHAPE,0,2D ! 四边形形状</p>
+<p>ESIZE,hmesh ! 本次名义网格尺寸m</p>
+<p>AMESH,ALL ! 对当前唯一面积划分网格</p>
+<p>ALLSEL,ALL ! 热源施加到全部单元</p>
+<p>BFE,ALL,HGEN,,qvol ! 全部单元均匀体积生热W/m3</p>
+<p>NSEL,S,LOC,X,rad ! 仅外圆柱表面节点；不选轴线或端面内部</p>
+<p>SF,ALL,CONV,hcoef,tbulk ! 对流系数和冷却剂温度，端面自然绝热</p>
+<p>ALLSEL,ALL ! 求解前恢复全部节点和单元</p>
+<p>*GET,nnodes,NODE,0,COUNT ! 记录当前网格节点数</p>
+<p>FINISH ! 离开前处理</p>
+<p>/SOLU ! 求解当前工况</p>
+<p>ANTYPE,STATIC,NEW ! 新的稳态热分析，不能沿用上一网格结果</p>
+<p>OUTRES,ALL,ALL ! 保存结果</p>
+<p>SOLVE ! 求解温度场</p>
+<p>FINISH ! 结束求解</p>
+<p>/POST1 ! 后处理</p>
+<p>SET,LAST ! 读取本次结果</p>
+<p>ALLSEL,ALL ! 节点定位前恢复全部节点</p>
+<p>ncenter=NODE(0,alen/2,0) ! 轴线中点节点，三套网格均包含该位置</p>
+<p>nouter=NODE(rad,alen/2,0) ! 外圆柱中点节点</p>
+<p>*GET,tc,NODE,ncenter,TEMP ! 当前网格中心温度K</p>
+<p>*GET,to,NODE,nouter,TEMP ! 当前网格外表面温度K</p>
+<p>texact=tbulk+qvol*rad/(2*hcoef)+qvol*rad**2/(4*kcond) ! 解析中心温度K</p>
+<p>qinput=qvol*pi*rad**2*alen ! 整根圆柱输入热功率W；360度轴对称</p>
+<p>qout=hcoef*2*pi*rad*alen*(to-tbulk) ! 轴向均匀条件下整根圆柱散热W</p>
+<p>errtemp=ABS(tc-texact)/(texact-tbulk) ! 用温升归一化，避免绝对温度掩盖误差</p>
+<p>errheat=ABS(qout-qinput)/qinput ! 热平衡相对误差</p>
+<p>change=-1 ! 第一套网格无前序比较，以-1明确表示</p>
+<p>*IF,igrid,GT,1,THEN ! 与同材料前一套粗网格比较</p>
+<p>change=ABS(tc-res(runid-1,4))/(texact-tbulk) ! 网格变化的温升相对量</p>
+<p>*ENDIF ! 完成粗细网格比较</p>
+<p>res(runid,1)=icase ! 第1列工况号</p>
+<p>res(runid,2)=hmesh ! 第2列网格尺寸m</p>
+<p>res(runid,3)=nnodes ! 第3列节点数</p>
+<p>res(runid,4)=tc ! 第4列中心温度K</p>
+<p>res(runid,5)=to ! 第5列外温K</p>
+<p>res(runid,6)=texact ! 第6列解析中心温度K</p>
+<p>res(runid,7)=errtemp ! 第7列解析温升相对误差</p>
+<p>res(runid,8)=errheat ! 第8列热平衡相对误差</p>
+<p>res(runid,9)=change ! 第9列粗细网格变化</p>
+<p>FINISH ! 结束本次后处理</p>
+<p>*ENDDO ! 完成三套网格</p>
+<p>*ENDDO ! 完成两类等效棒</p>
+<p>*CFOPEN,mesh_study,csv ! 所有求解完成后一次性输出，覆盖旧文件</p>
+<p>*DO,irow,1,6 ! 逐行导出九列结果</p>
+<p>*VLEN,1 ! 每次只输出当前一行，避免数组自动向量循环重复输出</p>
+<p>*VWRITE,res(irow,1),res(irow,2),res(irow,3),res(irow,4),res(irow,5),res(irow,6),res(irow,7),res(irow,8),res(irow,9) ! 紧邻下一行是九列CSV纯格式，不追加注释</p>
+<p>(E13.6,8(&#x27;,&#x27;,E13.6))</p>
+<p>*ENDDO ! 完成六行输出</p>
+<p>*CFCLOS ! 关闭结果文件</p>
+<p>FINISH ! 本批处理结束</p>
+<p>```</p>
+<h2>预期结果</h2>
+<p>解析解为 T(r)=Tᵦ+qᵥR/(2h)+qᵥ(R²−r²)/(4k)。燃料中心解析值859.6667 K，外温593 K；吸收体中心591.3333 K，外温578 K。这些为解析计算值，有限元数值必须从验证目录读取。</p>
+<p>CSV依次记录工况号、网格尺寸m、节点数、中心温度K、外温K、解析中心温度K、中心温升相对误差、热平衡误差、同材料粗细网格温升变化。每个工况第一行最后一列为−1，表示无前序网格。</p>
+<p>温升相对误差采用|T中心−T解析|/(T解析−Tᵦ)，避免用绝对开尔文温度造成误差看似很小。三套网格只证明本工况的趋势；不要未经单调性、渐近区和收敛阶检查就给出GCI。</p>
+<h2>验证清单</h2>
+<ul>
+<li>核对m、W、K单位，以及轴对称完整圆柱热量qᵥπR²L；不能再乘2π。</li>
+<li>两端无热流、轴线对称、只有外侧对流。外表面温度沿轴向应一致。</li>
+<li>由于轴向均匀，用中点外温计算Qout=h·2πRL·(T外−Tᵦ)，与Qin比较；轴向热源变化时必须对外表面温度积分。</li>
+<li>分别检查2、1、0.5 mm温升误差和粗细差；约定1%是本课演示判据，不是核工程验收标准。</li>
+<li>网格节点与单元数应增加；CSV应恰好六行、九列。参数数组不被循环中的清理操作删除。</li>
+<li>POD前处理需先控制全阶离散误差，所有快照投影到共同物理网格，再区分截断、插值和全阶误差。</li>
+</ul>
+<h2>常见错误</h2>
+<ol>
+<li>循环中使用<code>/CLEAR</code>会删除参数和数组；改用面积网格清理。</li>
+<li>把PLANE55默认平面形式当圆柱，热源和表面积不一致；必须设置轴对称。</li>
+<li>外温变化小就宣称网格独立：外温由整体能量守恒约束，中心温升及梯度仍可能有显著离散误差。</li>
+</ol>
+<h2>练习题</h2>
+<ol>
+<li>把h减半，比较外温、中心温升和网格误差；解释边界热阻变化为何不保证内部梯度更准确。</li>
+<li>添加包壳和燃料间隙，分别细化各区；随后引入轴向余弦功率分布，改用外表面积分校核热平衡，并讨论今日LBE棒束热点为何不能由均匀加热解预测。</li>
+</ol>
+<h2>命令依据</h2>
+<ul>
+<li>[PLANE55：Ansys官方单元参考](https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_elem/Hlp_E_PLANE55.html)</li>
+<li>[SF：Ansys官方命令参考](https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_cmd/Hlp_C_SF.html)</li>
+<li>[ADELE：Ansys官方命令参考](https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_cmd/Hlp_C_ADELE.html)</li>
+</ul>
+<h2>验证状态</h2>
+<p>static_only：已完成公式、参数、逐行注释及格式行静态检查。隔离MAPDL返回7，许可服务不可用（FlexNet −97,121），未执行求解；不预填有限元数值。</p><h2>完整 example.inp（逐行中文注释）</h2><pre><span class="code-line"><i>01</i><span class="code">/CLEAR,NOSTART </span><span class="comment">! 仅用于独立批处理实例；m、W、K单位制</span></span>
+<span class="code-line"><i>02</i><span class="code">/FILNAME,lesson27 </span><span class="comment">! 本课结果文件前缀</span></span>
+<span class="code-line"><i>03</i><span class="code">/PREP7 </span><span class="comment">! 创建轴对称稳态导热模型</span></span>
+<span class="code-line"><i>04</i><span class="code">ET,1,PLANE55 </span><span class="comment">! 四节点二维热单元</span></span>
+<span class="code-line"><i>05</i><span class="code">KEYOPT,1,3,1 </span><span class="comment">! 轴对称；X为半径，Y为轴线</span></span>
+<span class="code-line"><i>06</i><span class="code">MP,KXX,1,3 </span><span class="comment">! 等效燃料导热率3 W/(m K)，教学常数</span></span>
+<span class="code-line"><i>07</i><span class="code">MP,KXX,2,15 </span><span class="comment">! 等效控制棒吸收体导热率15 W/(m K)</span></span>
+<span class="code-line"><i>08</i><span class="code">rad=0.004 </span><span class="comment">! 圆柱半径4 mm</span></span>
+<span class="code-line"><i>09</i><span class="code">alen=0.040 </span><span class="comment">! 圆柱长度40 mm</span></span>
+<span class="code-line"><i>10</i><span class="code">hcoef=20000 </span><span class="comment">! 外表面对流系数W/(m2 K)</span></span>
+<span class="code-line"><i>11</i><span class="code">tbulk=573 </span><span class="comment">! 冷却剂温度K</span></span>
+<span class="code-line"><i>12</i><span class="code">pi=ACOS(-1) </span><span class="comment">! 圆周率，角度函数采用默认弧度</span></span>
+<span class="code-line"><i>13</i><span class="code">*DIM,res,ARRAY,6,9 </span><span class="comment">! 六行：工况、尺寸、节点数、中心温度、外温、解析中心温度、温升相对误差、热平衡误差、网格变化</span></span>
+<span class="code-line"><i>14</i><span class="code">runid=0 </span><span class="comment">! 计算次数计数器</span></span>
+<span class="code-line"><i>15</i><span class="code">FINISH </span><span class="comment">! 结束初始化</span></span>
+<span class="code-line"><i>16</i><span class="code">*DO,icase,1,2 </span><span class="comment">! 两个等效材料工况，均不含包壳和间隙</span></span>
+<span class="code-line"><i>17</i><span class="code">*IF,icase,EQ,1,THEN </span><span class="comment">! 燃料棒工况</span></span>
+<span class="code-line"><i>18</i><span class="code">qvol=2E8 </span><span class="comment">! 体积热源W/m3</span></span>
+<span class="code-line"><i>19</i><span class="code">kcond=3 </span><span class="comment">! 对应燃料导热率</span></span>
+<span class="code-line"><i>20</i><span class="code">*ELSE </span><span class="comment">! 控制棒吸收体工况</span></span>
+<span class="code-line"><i>21</i><span class="code">qvol=5E7 </span><span class="comment">! 体积热源W/m3，教学假设</span></span>
+<span class="code-line"><i>22</i><span class="code">kcond=15 </span><span class="comment">! 对应吸收体导热率</span></span>
+<span class="code-line"><i>23</i><span class="code">*ENDIF </span><span class="comment">! 完成工况选择</span></span>
+<span class="code-line"><i>24</i><span class="code">*DO,igrid,1,3 </span><span class="comment">! 网格尺寸依次为2、1、0.5 mm</span></span>
+<span class="code-line"><i>25</i><span class="code">runid=runid+1 </span><span class="comment">! 每次网格计算占一行</span></span>
+<span class="code-line"><i>26</i><span class="code">hmesh=rad/(2**igrid) </span><span class="comment">! 径向和轴向名义网格尺寸m</span></span>
+<span class="code-line"><i>27</i><span class="code">/PREP7 </span><span class="comment">! 开始本次网格重建</span></span>
+<span class="code-line"><i>28</i><span class="code">ALLSEL,ALL </span><span class="comment">! 清理和划分前恢复所有选择</span></span>
+<span class="code-line"><i>29</i><span class="code">*IF,runid,GT,1,THEN </span><span class="comment">! 首次运行没有旧网格，不执行清除</span></span>
+<span class="code-line"><i>30</i><span class="code">ACLEAR,ALL </span><span class="comment">! 删除旧面积网格，保留数组和循环参数</span></span>
+<span class="code-line"><i>31</i><span class="code">ADELE,ALL,,,1 </span><span class="comment">! 删除已清网格面积及其独占线、关键点</span></span>
+<span class="code-line"><i>32</i><span class="code">*ENDIF </span><span class="comment">! 完成旧模型清理</span></span>
+<span class="code-line"><i>33</i><span class="code">RECTNG,0,rad,0,alen </span><span class="comment">! 轴对称圆柱子午面矩形</span></span>
+<span class="code-line"><i>34</i><span class="code">TYPE,1 </span><span class="comment">! 选热单元</span></span>
+<span class="code-line"><i>35</i><span class="code">MAT,icase </span><span class="comment">! 当前工况的材料号</span></span>
+<span class="code-line"><i>36</i><span class="code">MSHKEY,1 </span><span class="comment">! 映射四边形网格</span></span>
+<span class="code-line"><i>37</i><span class="code">MSHAPE,0,2D </span><span class="comment">! 四边形形状</span></span>
+<span class="code-line"><i>38</i><span class="code">ESIZE,hmesh </span><span class="comment">! 本次名义网格尺寸m</span></span>
+<span class="code-line"><i>39</i><span class="code">AMESH,ALL </span><span class="comment">! 对当前唯一面积划分网格</span></span>
+<span class="code-line"><i>40</i><span class="code">ALLSEL,ALL </span><span class="comment">! 热源施加到全部单元</span></span>
+<span class="code-line"><i>41</i><span class="code">BFE,ALL,HGEN,,qvol </span><span class="comment">! 全部单元均匀体积生热W/m3</span></span>
+<span class="code-line"><i>42</i><span class="code">NSEL,S,LOC,X,rad </span><span class="comment">! 仅外圆柱表面节点；不选轴线或端面内部</span></span>
+<span class="code-line"><i>43</i><span class="code">SF,ALL,CONV,hcoef,tbulk </span><span class="comment">! 对流系数和冷却剂温度，端面自然绝热</span></span>
+<span class="code-line"><i>44</i><span class="code">ALLSEL,ALL </span><span class="comment">! 求解前恢复全部节点和单元</span></span>
+<span class="code-line"><i>45</i><span class="code">*GET,nnodes,NODE,0,COUNT </span><span class="comment">! 记录当前网格节点数</span></span>
+<span class="code-line"><i>46</i><span class="code">FINISH </span><span class="comment">! 离开前处理</span></span>
+<span class="code-line"><i>47</i><span class="code">/SOLU </span><span class="comment">! 求解当前工况</span></span>
+<span class="code-line"><i>48</i><span class="code">ANTYPE,STATIC,NEW </span><span class="comment">! 新的稳态热分析，不能沿用上一网格结果</span></span>
+<span class="code-line"><i>49</i><span class="code">OUTRES,ALL,ALL </span><span class="comment">! 保存结果</span></span>
+<span class="code-line"><i>50</i><span class="code">SOLVE </span><span class="comment">! 求解温度场</span></span>
+<span class="code-line"><i>51</i><span class="code">FINISH </span><span class="comment">! 结束求解</span></span>
+<span class="code-line"><i>52</i><span class="code">/POST1 </span><span class="comment">! 后处理</span></span>
+<span class="code-line"><i>53</i><span class="code">SET,LAST </span><span class="comment">! 读取本次结果</span></span>
+<span class="code-line"><i>54</i><span class="code">ALLSEL,ALL </span><span class="comment">! 节点定位前恢复全部节点</span></span>
+<span class="code-line"><i>55</i><span class="code">ncenter=NODE(0,alen/2,0) </span><span class="comment">! 轴线中点节点，三套网格均包含该位置</span></span>
+<span class="code-line"><i>56</i><span class="code">nouter=NODE(rad,alen/2,0) </span><span class="comment">! 外圆柱中点节点</span></span>
+<span class="code-line"><i>57</i><span class="code">*GET,tc,NODE,ncenter,TEMP </span><span class="comment">! 当前网格中心温度K</span></span>
+<span class="code-line"><i>58</i><span class="code">*GET,to,NODE,nouter,TEMP </span><span class="comment">! 当前网格外表面温度K</span></span>
+<span class="code-line"><i>59</i><span class="code">texact=tbulk+qvol*rad/(2*hcoef)+qvol*rad**2/(4*kcond) </span><span class="comment">! 解析中心温度K</span></span>
+<span class="code-line"><i>60</i><span class="code">qinput=qvol*pi*rad**2*alen </span><span class="comment">! 整根圆柱输入热功率W；360度轴对称</span></span>
+<span class="code-line"><i>61</i><span class="code">qout=hcoef*2*pi*rad*alen*(to-tbulk) </span><span class="comment">! 轴向均匀条件下整根圆柱散热W</span></span>
+<span class="code-line"><i>62</i><span class="code">errtemp=ABS(tc-texact)/(texact-tbulk) </span><span class="comment">! 用温升归一化，避免绝对温度掩盖误差</span></span>
+<span class="code-line"><i>63</i><span class="code">errheat=ABS(qout-qinput)/qinput </span><span class="comment">! 热平衡相对误差</span></span>
+<span class="code-line"><i>64</i><span class="code">change=-1 </span><span class="comment">! 第一套网格无前序比较，以-1明确表示</span></span>
+<span class="code-line"><i>65</i><span class="code">*IF,igrid,GT,1,THEN </span><span class="comment">! 与同材料前一套粗网格比较</span></span>
+<span class="code-line"><i>66</i><span class="code">change=ABS(tc-res(runid-1,4))/(texact-tbulk) </span><span class="comment">! 网格变化的温升相对量</span></span>
+<span class="code-line"><i>67</i><span class="code">*ENDIF </span><span class="comment">! 完成粗细网格比较</span></span>
+<span class="code-line"><i>68</i><span class="code">res(runid,1)=icase </span><span class="comment">! 第1列工况号</span></span>
+<span class="code-line"><i>69</i><span class="code">res(runid,2)=hmesh </span><span class="comment">! 第2列网格尺寸m</span></span>
+<span class="code-line"><i>70</i><span class="code">res(runid,3)=nnodes </span><span class="comment">! 第3列节点数</span></span>
+<span class="code-line"><i>71</i><span class="code">res(runid,4)=tc </span><span class="comment">! 第4列中心温度K</span></span>
+<span class="code-line"><i>72</i><span class="code">res(runid,5)=to </span><span class="comment">! 第5列外温K</span></span>
+<span class="code-line"><i>73</i><span class="code">res(runid,6)=texact </span><span class="comment">! 第6列解析中心温度K</span></span>
+<span class="code-line"><i>74</i><span class="code">res(runid,7)=errtemp </span><span class="comment">! 第7列解析温升相对误差</span></span>
+<span class="code-line"><i>75</i><span class="code">res(runid,8)=errheat </span><span class="comment">! 第8列热平衡相对误差</span></span>
+<span class="code-line"><i>76</i><span class="code">res(runid,9)=change </span><span class="comment">! 第9列粗细网格变化</span></span>
+<span class="code-line"><i>77</i><span class="code">FINISH </span><span class="comment">! 结束本次后处理</span></span>
+<span class="code-line"><i>78</i><span class="code">*ENDDO </span><span class="comment">! 完成三套网格</span></span>
+<span class="code-line"><i>79</i><span class="code">*ENDDO </span><span class="comment">! 完成两类等效棒</span></span>
+<span class="code-line"><i>80</i><span class="code">*CFOPEN,mesh_study,csv </span><span class="comment">! 所有求解完成后一次性输出，覆盖旧文件</span></span>
+<span class="code-line"><i>81</i><span class="code">*DO,irow,1,6 </span><span class="comment">! 逐行导出九列结果</span></span>
+<span class="code-line"><i>82</i><span class="code">*VLEN,1 </span><span class="comment">! 每次只输出当前一行，避免数组自动向量循环重复输出</span></span>
+<span class="code-line"><i>83</i><span class="code">*VWRITE,res(irow,1),res(irow,2),res(irow,3),res(irow,4),res(irow,5),res(irow,6),res(irow,7),res(irow,8),res(irow,9) </span><span class="comment">! 紧邻下一行是九列CSV纯格式，不追加注释</span></span>
+<span class="code-line"><i>84</i><span class="code">(E13.6,8(&#x27;,&#x27;,E13.6))</span></span>
+<span class="code-line"><i>85</i><span class="code">*ENDDO </span><span class="comment">! 完成六行输出</span></span>
+<span class="code-line"><i>86</i><span class="code">*CFCLOS </span><span class="comment">! 关闭结果文件</span></span>
+<span class="code-line"><i>87</i><span class="code">FINISH </span><span class="comment">! 本批处理结束</span></span></pre></main><footer class="shell">ANSYS APDL 反应堆热工结构每日学习 · 示例用于建模训练和命令理解</footer></body></html>

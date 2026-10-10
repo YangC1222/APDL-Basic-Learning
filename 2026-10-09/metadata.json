@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-09",
+  "lesson": 27,
+  "topic": "燃料棒与控制棒案例的网格独立性自动循环",
+  "difficulty": "进阶",
+  "commands": [
+    "PLANE55",
+    "KEYOPT",
+    "*DO",
+    "*DIM",
+    "ACLEAR",
+    "ADELE",
+    "BFE",
+    "SF",
+    "*GET",
+    "*VWRITE",
+    "*VLEN"
+  ],
+  "validation_status": "static_only",
+  "validation_note": "隔离MAPDL返回7：许可服务不可用（FlexNet -97,121）；已完成静态检查，未执行求解。",
+  "prerequisite": "第26课及稳态轴对称导热基础",
+  "model_assumptions": "常物性、均匀热源、两端绝热、仅外面对流；教学等效棒，不含包壳或间隙。",
+  "references": [
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_elem/Hlp_E_PLANE55.html",
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_cmd/Hlp_C_SF.html",
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_cmd/Hlp_C_ADELE.html"
+  ],
+  "validation_log": "validation/solver.out"
+}
