@@ -1,0 +1,35 @@
+/CLEAR,NOSTART ! 独立实例清理；m、N、K、Pa单位制
+/FILNAME,supplement25 ! 补充练习文件前缀
+/PREP7 ! 轴向热膨胀结构模型
+ET,1,LINK180 ! 两节点轴向杆单元，不具有弯曲刚度
+SECTYPE,1,LINK ! 杆截面定义
+SECDATA,1E-4 ! 截面积m2
+MP,EX,1,2E11 ! 杨氏模量Pa，教学常数
+MP,PRXY,1,0.3 ! 泊松比教学常数
+MP,ALPX,1,1E-5 ! 线膨胀系数1/K
+TREF,293 ! 无热应变参考温度K
+N,1,0,0,0 ! 左端节点
+N,2,0.5,0,0 ! 内部节点，保留真实活动轴向自由度
+N,3,1,0,0 ! 右端节点，长度1 m
+E,1,2 ! 左半段杆单元
+E,2,3 ! 右半段杆单元
+D,ALL,UY,0 ! 全部节点横向自由度固定，消除杆横向机构
+D,ALL,UZ,0 ! 全部节点面外自由度固定
+D,1,UX,0 ! 左端轴向固定
+BF,ALL,TEMP,393 ! 全部节点均匀给定温度393 K
+FINISH ! 完成前处理
+/SOLU ! 开始线性静力分析
+ANTYPE,STATIC ! 结构静力分析
+SOLVE ! 求解当前右端约束工况
+FINISH ! 结束求解
+/POST1 ! 提取结果
+SET,LAST ! 读取最后结果
+*GET,uend,NODE,3,U,X ! 右端轴向位移m
+*GET,rfleft,NODE,1,RF,FX ! 左端轴向反力N
+stress=-rfleft/1E-4 ! 由截面和左端反力计算轴向应力Pa
+*CFOPEN,bar_check,csv ! 输出位移、反力和应力
+*VLEN,1 ! 每次写一行
+*VWRITE,uend,rfleft,stress ! 下一行为纯CSV格式，不追加注释
+(E13.6,2(',',E13.6))
+*CFCLOS ! 关闭文件
+FINISH ! 独立批处理结束

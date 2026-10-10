@@ -1,0 +1,29 @@
+{
+  "date": "2026-10-06",
+  "lesson": 25,
+  "topic": "第25课补充A：自由热膨胀与最小约束",
+  "difficulty": "进阶",
+  "commands": [
+    "LINK180",
+    "SECTYPE",
+    "TREF",
+    "BF",
+    "D",
+    "*GET",
+    "*VWRITE"
+  ],
+  "prerequisite": "第25课约束选择",
+  "model_assumptions": "等效结构杆、均匀给定温度；左端轴向固定，右端自由。",
+  "validation_status": "solved",
+  "validation_note": "本次MAPDL隔离求解返回0，无求解错误。右端轴向位移 0.001 m、左端反力 0 N、轴向应力 0 MPa，与常物性线性杆解析解一致。模型为两单元三节点；固定横向机构，保留内部轴向自由度。该校核只覆盖轴向热膨胀/约束，不验证弯曲、接触或真实燃料寿命。",
+  "supplemental_label": "A",
+  "generated_at": "2026-10-10T12:23:25.273269+08:00",
+  "references": [
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_cmd/Hlp_C_GET.html",
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_elem/Hlp_E_PLANE55.html"
+  ],
+  "validation_exit_code": 0,
+  "validation_log": "validation/solver.out",
+  "validation_summary": "validation/validation-summary.json",
+  "validated_input_sha256": "7917d4fa70f4e5e338f5b71b6e790c358c09e2562dda1afbf1be2ac591dbf9c2"
+}
