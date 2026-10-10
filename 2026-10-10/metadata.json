@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-10",
+  "lesson": 28,
+  "topic": "燃料/控制棒关键参数扫描与结果批量导出",
+  "difficulty": "进阶",
+  "commands": [
+    "PLANE55",
+    "MP",
+    "BFE",
+    "SF",
+    "*DIM",
+    "*DO",
+    "*GET",
+    "*VLEN",
+    "*VWRITE"
+  ],
+  "prerequisite": "第26、27课",
+  "model_assumptions": "等效棒；固定网格，五点q/k/h教学路径扫描。",
+  "validation_status": "solved",
+  "validation_note": "本次隔离MAPDL求解返回0，无求解错误。验证表为5行8列，空间快照为729行8列，节点编号/坐标唯一且固定；逐工况温度场、轴向均匀性和外壁边界均已核对。最大中心温升相对解析误差 0.9157%，求解器保留精度下最大整体热平衡误差 1.14e-14。CSV温度输出有限小数位，重新用CSV算热平衡时应允许舍入误差。",
+  "supplemental_label": "",
+  "generated_at": "2026-10-10T12:23:25.275151+08:00",
+  "references": [
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_cmd/Hlp_C_GET.html",
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_elem/Hlp_E_PLANE55.html"
+  ],
+  "validation_exit_code": 0,
+  "validation_log": "validation/solver.out",
+  "validation_summary": "validation/validation-summary.json",
+  "validated_input_sha256": "02359a17ee8a16f39cf57ae32c8dcafa9602ccc417c93e1548f8d2a1b3d3235a"
+}

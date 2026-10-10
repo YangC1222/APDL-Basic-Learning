@@ -1,0 +1,84 @@
+/CLEAR,NOSTART ! 只在循环前清理独立模型；m、W、K单位制
+/FILNAME,lesson28 ! 本课前缀
+/PREP7 ! 建立固定网格热模型
+ET,1,PLANE55 ! 四节点热单元
+KEYOPT,1,3,1 ! 轴对称，X为径向、Y为轴向
+rad=0.004 ! 半径4 mm
+alen=0.040 ! 长度40 mm
+tbulk=573 ! 冷却剂温度K
+kcond=3 ! 等效燃料导热率W/(m K)
+MP,KXX,1,kcond ! 常导热教学材料，不含包壳或间隙
+RECTNG,0,rad,0,alen ! 圆柱子午面
+MSHKEY,1 ! 映射网格
+MSHAPE,0,2D ! 四边形网格
+ESIZE,0.0005 ! 名义网格尺寸0.5 mm
+AMESH,ALL ! 只划分一次，所有快照节点顺序相同
+ALLSEL,ALL ! 节点统计前恢复全部选择
+*GET,nnodes,NODE,0,COUNT ! 节点总数
+*DIM,snap,ARRAY,nnodes,8 ! 节点号、r、z与五个参数工况温度
+*DIM,res,ARRAY,5,8 ! q、k、h、中心、外壁、解析中心、温升误差、热平衡误差
+prevnode=0 ! 节点号从0之后开始查找
+*DO,ii,1,nnodes ! 保存真实选中节点编号，允许编号不连续
+*GET,nownd,NODE,prevnode,NXTH ! 获取下一更大选中节点号
+snap(ii,1)=nownd ! 保存节点号，不能用数组行号替代
+snap(ii,2)=NX(nownd) ! 保存径向坐标m
+snap(ii,3)=NY(nownd) ! 保存轴向坐标m
+prevnode=nownd ! 更新遍历位置
+*ENDDO ! 完成节点映射
+FINISH ! 完成固定模型
+*DO,icase,1,5 ! 五个独立参数点，保持几何与节点一致
+qvol=1E8+icase*2E7 ! 生热依次1.2至2.0E8 W/m3
+hcoef=20000 ! 外面对流W/(m2 K)
+kcond=3+3*(icase-1) ! 教学材料导热率3、6、9、12、15 W/(m K)
+hcoef=10000+2500*(icase-1) ! 教学对流10000至20000 W/(m2 K)
+/PREP7 ! 更新材料与热载荷
+MP,KXX,1,kcond ! 当前参数的常导热率
+ALLSEL,ALL ! 热源施加全部单元
+BFE,ALL,HGEN,,qvol ! 覆盖前一工况体积热源
+NSEL,S,LOC,X,rad ! 选外壁节点
+SF,ALL,CONV,hcoef,tbulk ! 覆盖当前工况外壁对流，端面自然绝热
+ALLSEL,ALL ! 求解前恢复所有选择
+FINISH ! 完成载荷更新
+/SOLU ! 稳态导热分析
+ANTYPE,STATIC,NEW ! 当前参数新分析，数组保留
+OUTRES,ALL,ALL ! 保存温度
+SOLVE ! 求解本参数点
+FINISH ! 完成求解
+/POST1 ! 读取结果
+SET,LAST ! 本次结果
+ALLSEL,ALL ! 保存所有节点温度
+*DO,ii,1,nnodes ! 按已保存节点映射提取
+nownd=snap(ii,1) ! 真实节点号
+*GET,tnow,NODE,nownd,TEMP ! 本节点温度K
+snap(ii,icase+3)=tnow ! 对应参数列
+*ENDDO ! 完成全场快照
+ncenter=NODE(0,alen/2,0) ! 轴线中点
+nouter=NODE(rad,alen/2,0) ! 外壁中点
+*GET,tc,NODE,ncenter,TEMP ! 中心温度K
+*GET,to,NODE,nouter,TEMP ! 外壁温度K
+texact=tbulk+qvol*rad/(2*hcoef)+qvol*rad**2/(4*kcond) ! 解析中心温度K
+res(icase,1)=qvol ! 生热参数
+res(icase,2)=kcond ! 导热率
+res(icase,3)=hcoef ! 对流边界
+res(icase,4)=tc ! 数值中心温度
+res(icase,5)=to ! 数值外壁温度
+res(icase,6)=texact ! 解析参考温度，非数值结果
+res(icase,7)=ABS(tc-texact)/(texact-tbulk) ! 温升相对误差
+res(icase,8)=ABS(hcoef*2*rad*(to-tbulk)-qvol*rad**2)/(qvol*rad**2) ! 轴向均匀时热平衡误差
+FINISH ! 结束当前工况
+*ENDDO ! 完成五个参数点
+*CFOPEN,parameter_check,csv ! 参数及验证指标输出
+*DO,ii,1,5 ! 逐工况一行
+*VLEN,1 ! 避免自动向量重复输出
+*VWRITE,res(ii,1),res(ii,2),res(ii,3),res(ii,4),res(ii,5),res(ii,6),res(ii,7),res(ii,8) ! 下一行纯格式，八列
+(E13.6,7(',',E13.6))
+*ENDDO ! 完成验证表
+*CFCLOS ! 关闭参数表
+*CFOPEN,field_snapshots,csv ! 节点号、r、z、五列完整温度场
+*DO,ii,1,nnodes ! 按固定节点顺序逐行输出
+*VLEN,1 ! 本次只写一行
+*VWRITE,snap(ii,1),snap(ii,2),snap(ii,3),snap(ii,4),snap(ii,5),snap(ii,6),snap(ii,7),snap(ii,8) ! 下一行纯格式
+(E13.6,7(',',E13.6))
+*ENDDO ! 完成空间快照输出
+*CFCLOS ! 关闭空间快照
+FINISH ! 批处理结束
