@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="540" viewBox="0 0 960 540">
+<defs><marker id="a" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="none" stroke="#1b6171"/></marker></defs>
+<rect width="960" height="540" fill="#f5fafb"/><g font-family="Microsoft YaHei,Arial" fill="#1b3647">
+<text x="40" y="42" font-size="26">第29课 · 模型数据库恢复与独立稳态批处理</text><text x="40" y="76" font-size="16">非比例子午面：X=r，Y=z；绕r=0轴旋转得到圆柱</text>
+<rect x="170" y="130" width="170" height="285" fill="#f7d99a" stroke="#1b6171" stroke-width="2"/>
+<path d="M170 435 V110 M145 415 H390" stroke="#1b6171" stroke-width="2" marker-end="url(#a)" fill="none"/><text x="154" y="106">z</text><text x="400" y="420">r</text>
+<text x="184" y="228" font-size="19">等效燃料/控制棒</text><text x="184" y="264" font-size="16">k=3 W/(m·K)</text><text x="184" y="295" font-size="15">q=1.2/1.4/1.6</text><text x="184" y="320" font-size="15">×10⁸ W/m³</text>
+<path d="M350 173 H401 M350 253 H401 M350 333 H401" stroke="#1b6171" stroke-width="2" marker-end="url(#a)"/>
+<text x="419" y="246" font-size="17">外壁对流</text><text x="419" y="277" font-size="16">h=20000 W/(m²·K)</text><text x="419" y="307" font-size="16">Tb=573 K</text>
+<path d="M110 130 V415 M170 455 H340" stroke="#1b6171" stroke-width="2"/><text x="32" y="285" font-size="14">L=40 mm</text><text x="198" y="479" font-size="16">R=4 mm</text>
+<text x="185" y="119" font-size="15">上端绝热</text><text x="183" y="438" font-size="15">下端绝热</text>
+<rect x="652" y="130" width="262" height="285" rx="15" fill="#deedf0"/><text x="676" y="170" font-size="18">SAVE baseline.db</text><text x="676" y="214" font-size="17">清除内存 → RESUME</text><text x="676" y="258" font-size="17">*IF拒绝无效输入</text><text x="676" y="302" font-size="17">3个STATIC,NEW工况</text><text x="676" y="346" font-size="17">日志 + CSV + 解析校核</text><text x="676" y="390" font-size="15">不是连续瞬态时间重启</text>
+<text x="40" y="521" font-size="14">无包壳/间隙；教学参数；每次运行采用独立目录，不清除或停止用户已有求解实例。</text></g></svg>

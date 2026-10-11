@@ -1,0 +1,28 @@
+{
+  "date": "2026-10-11",
+  "lesson": 29,
+  "topic": "错误捕获、模型数据库恢复与批处理重算",
+  "difficulty": "进阶",
+  "commands": [
+    "SAVE",
+    "RESUME",
+    "/CLEAR",
+    "*IF",
+    "/EXIT",
+    "*CFOPEN",
+    "ANTYPE",
+    "*VWRITE"
+  ],
+  "prerequisite": "第27、28课",
+  "model_assumptions": "轴对称等效棒，常导热率、均匀体积热源、外壁定常对流和端面绝热；三个独立稳态工况。数据库恢复不等于瞬态物理状态重启。",
+  "validation_status": "solved",
+  "validation_note": "隔离MAPDL实际完成数据库恢复与三个稳态工况：3行7列，中心温升最大误差0.2868%，热平衡误差1.89e-14；网格减半误差降为0.0822%。无效h输入成功写出BAD_H并拒绝结果/完成标记。不是物理瞬态状态重启。",
+  "references": [
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v252/en/ans_cmd/Hlp_C_RESUME.html",
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v252/en/ans_bas/Hlp_G_BAS3_12.html"
+  ],
+  "validated_input_sha256": "09fba2f97a07373186d52a172f8dbd9d17d1f9c91ecc1cc596ac70c5284a9a91",
+  "validation_exit_code": 0,
+  "validation_log": "validation/checked_normal/solver.out",
+  "validation_summary": "validation/validation-summary.json"
+}
