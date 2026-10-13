@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-12",
+  "lesson": 30,
+  "topic": "燃料棒瞬态热—结构与控制棒几何间隙核对",
+  "difficulty": "进阶",
+  "validation_status": "solved",
+  "validation_note": "隔离MAPDL正常、网格减半、时间步减半均完成。40 s中心753.025 K，稳态参考752.889 K，平台热平衡误差0.076%；网格位移变化0.024%、平均应力变化0.365%。控制棒自由膨胀与解析一致，几何间隙2.6267 μm。有限教学假设下验证，不等于安全评价。",
+  "prerequisite": "第29课",
+  "references": [
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_elem/Hlp_E_PLANE55.html",
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_cmd/Hlp_C_LDREAD.html",
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_cmd/Hlp_C_ETCHG.html"
+  ],
+  "commands": [
+    "PLANE55",
+    "PLANE182",
+    "IC",
+    "DELTIM",
+    "LDREAD",
+    "ETCHG",
+    "TREF",
+    "*GET",
+    "*VWRITE"
+  ],
+  "validation_exit_code": 0,
+  "validated_input_sha256": "69c34264ebebe593248672df9ecf6b87b9aeda17f0347910d374261ed8e0b554",
+  "validation_summary": "validation-summary.json",
+  "extra_assets": [
+    "validation-summary.json"
+  ]
+}

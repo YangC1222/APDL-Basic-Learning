@@ -1,0 +1,25 @@
+{
+  "input_sha256": "69c34264ebebe593248672df9ecf6b87b9aeda17f0347910d374261ed8e0b554",
+  "input_hash_basis": "UTF-8 command text with LF-normalized line endings; matches the validated run record and GitHub text.",
+  "actual_center_temperature_K": 753.02511024,
+  "steady_reference_center_K": 752.88885481,
+  "center_temperature_rise_relative_error": 0.0007574423114979506,
+  "plateau_heat_balance_relative_error": 0.00076221156123,
+  "fine_center_temperature_K": 752.79150013,
+  "fine_reference_relative_error": 0.0005411935058611246,
+  "time_step_half_center_K": 753.06433871,
+  "time_step_temperature_rise_change": 0.0002179055463302564,
+  "outer_cladding_radial_displacement_m": 3.5275423991e-06,
+  "outer_cladding_averaged_von_mises_Pa": 102021059.03,
+  "mesh_displacement_change": 0.00024259183963829594,
+  "mesh_stress_change": 0.003653862286318652,
+  "time_step_displacement_change": 0.00018891225805533514,
+  "control_rod_radial_displacement_m": 1.0668e-05,
+  "control_rod_analytic_displacement_m": 1.0668e-05,
+  "hot_radial_clearance_m": 2.6267e-06,
+  "warnings_interpretation": [
+    "ETCHG routine warning: element KEYOPT and structural material properties explicitly reset and verified.",
+    "Mixed-material error-estimator warning: not used as an accuracy claim; only outer cladding nodal averaged stress reported, not a peak or whole-model estimator."
+  ],
+  "scope": "Two independent teaching models. Perfect bonded zero-gap fuel/cladding; one-way quasi-static thermal-stress transfer at 40 s. Uniform control-rod and guide temperatures are prescribed, not taken from fuel solution. Geometric clearance is not insertion reliability."
+}
