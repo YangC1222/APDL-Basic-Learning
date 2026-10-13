@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-13",
+  "lesson": 31,
+  "topic": "POD快照、体积加权基与留出工况验证",
+  "difficulty": "进阶",
+  "validation_status": "solved",
+  "validation_note": "隔离MAPDL在两套网格完成11工况，外部加权POD只用9个训练点。2个留出点温升相对误差最大2.84e-10；插值点全阶峰值温升对解析误差由0.2803%降至0.0803%。两模态仅适用固定几何常物性线性问题，不宣称通用外推可靠性或总加速比。",
+  "prerequisite": "第30课",
+  "references": [
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_elem/Hlp_E_PLANE55.html",
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_cmd/Hlp_C_LDREAD.html",
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_cmd/Hlp_C_ETCHG.html"
+  ],
+  "commands": [
+    "PLANE55",
+    "*DIM",
+    "*DO",
+    "SF",
+    "BFE",
+    "NDNEXT",
+    "*GET",
+    "*VWRITE"
+  ],
+  "validation_exit_code": 0,
+  "validated_input_sha256": "70b788c9e7e2e0ab457d5bd1337c917d24b5a499e1e5dc7d9dd30e73dabc968b",
+  "validation_summary": "validation-summary.json",
+  "extra_assets": [
+    "pod_verify.py",
+    "snapshot-profile.csv",
+    "validation-summary.json"
+  ]
+}

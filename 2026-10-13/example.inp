@@ -1,0 +1,61 @@
+/CLEAR,NOSTART ! 隔离工作目录；SI制m、W、K
+/FILNAME,snap31 ! 快照独立前缀
+/PREP7 ! 固定几何、网格和材料，避免不一致节点造成假模态
+ET,1,PLANE55 ! 四节点热单元
+KEYOPT,1,3,1 ! X径向，Y轴向，轴对称
+rad=0.004 ! 等效燃料半径4 mm
+alen=0.04 ! 棒段长度40 mm
+kcond=3 ! 常导热率W/(m K)
+tbulk=573 ! 冷却剂温度K
+MP,KXX,1,kcond ! 教学等效燃料
+RECTNG,0,rad,0,alen ! 圆柱子午面
+MSHKEY,1 ! 映射四边形网格
+MSHAPE,0,2D ! 二维四边形
+ESIZE,0.00025 ! 固定名义网格0.25 mm
+AMESH,ALL ! 一次建网，重复参数点不重建
+ALLSEL,ALL ! 完整选择集
+*DIM,qs,ARRAY,11 ! 九个训练点加两个独立测试点
+*DIM,hs,ARRAY,11 ! 参数顺序与q数组严格一致
+*DO,iq,1,3 ! 三个生热点0.8、1.2、1.6E8
+*DO,ih,1,3 ! 三个换热系数10000、20000、40000
+ii=(iq-1)*3+ih ! 训练工况编号1到9
+qs(ii)=(0.4+0.4*iq)*1E8 ! 生热W/m3
+hs(ii)=10000*2**(ih-1) ! 对流W/(m2 K)
+*ENDDO ! 结束对流点
+*ENDDO ! 结束生热点
+qs(10)=1E8 ! 留出插值点，不参与建基和拟合
+hs(10)=15000 ! 插值点对流
+qs(11)=2E8 ! 超出训练q范围的压力测试
+hs(11)=5000 ! 超出训练h范围；不据此保证任意外推
+*CFOPEN,snapshots,csv ! 新目录导出11个工况全部节点
+*DO,icase,1,11 ! 独立稳态工况，不是瞬态时间步
+qvol=qs(icase) ! 当前生热W/m3
+hcoef=hs(icase) ! 当前换热系数W/(m2 K)
+BFE,ALL,HGEN,,qvol ! 覆盖全部燃料元素生热
+NSEL,S,LOC,X,rad ! 外壁选择
+SF,ALL,CONV,hcoef,tbulk ! 覆盖对流；两端绝热
+ALLSEL,ALL ! 解和输出前全选
+FINISH ! 前处理结束
+/SOLU ! 当前稳态问题
+ANTYPE,STATIC,NEW ! 新参数稳态求解，保留参数数组
+OUTRES,ALL,ALL ! 保存热结果
+SOLVE ! 实际有限元解
+FINISH ! 求解结束
+/POST1 ! 导出固定节点顺序
+SET,LAST ! 当前工况结果
+*GET,ncount,NODE,0,COUNT ! 已选择节点数量
+*GET,nid,NODE,0,NUM,MIN ! 最小节点号，支持非连续编号
+*DO,jn,1,ncount ! 每个节点恰好一次
+*GET,xr,NODE,nid,LOC,X ! 径向坐标m
+*GET,yz,NODE,nid,LOC,Y ! 轴向坐标m
+*GET,tn,NODE,nid,TEMP ! 温度K
+*VLEN,1 ! 每条输出一行，不向量扩展重复
+*VWRITE,icase,qvol,hcoef,nid,xr,yz,tn ! 下一行七列纯格式
+(F3.0,2(',',E17.10),',',F7.0,3(',',E17.10))
+nid=NDNEXT(nid) ! 下一个已选节点号
+*ENDDO ! 完成当前快照全部节点
+FINISH ! 结束当前工况
+/PREP7 ! 继续覆盖下一组热边界
+*ENDDO ! 十一个快照完成
+*CFCLOS ! 关闭快照表
+FINISH ! SVD和未见工况验证在pod_verify.py完成

@@ -1,0 +1,125 @@
+{
+  "input_sha256": "70b788c9e7e2e0ab457d5bd1337c917d24b5a499e1e5dc7d9dd30e73dabc968b",
+  "input_hash_basis": "UTF-8 command text with LF-normalized line endings.",
+  "normal": {
+    "training_cases": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "held_out_cases": [
+      10,
+      11
+    ],
+    "radial_nodes": 17,
+    "retained_modes": 2,
+    "singular_values": [
+      2.315284036951541,
+      0.07317200575906563,
+      3.458362183516517e-10,
+      2.6412038177715557e-10,
+      1.6377633227431924e-16,
+      4.642431560985814e-17,
+      3.529018300122637e-17,
+      2.6427198869211462e-17,
+      1.504013859652673e-17
+    ],
+    "retained_energy": 1.0,
+    "training_weighted_projection_relative_error": 1.878562669867506e-10,
+    "offline_pod_and_fit_seconds": 0.002452499989885837,
+    "tests": [
+      {
+        "case": 10,
+        "scope": "held_out_interpolation",
+        "q": 100000000.0,
+        "h": 15000.0,
+        "weighted_temperature_rise_relative_error": 2.83914474465597e-10,
+        "peak_temperature_rise_relative_error": 1.953691299658522e-10,
+        "fom_peak_vs_analytic_relative_error": 0.0028031852272723703,
+        "surface_energy_balance_relative_error": 2.499996298865881e-09,
+        "coefficient_prediction_seconds": 8.400005754083395e-06
+      },
+      {
+        "case": 11,
+        "scope": "out_of_training_range",
+        "q": 200000000.0,
+        "h": 5000.0,
+        "weighted_temperature_rise_relative_error": 9.092201704978017e-11,
+        "peak_temperature_rise_relative_error": 6.94586537003032e-11,
+        "fom_peak_vs_analytic_relative_error": 0.0023719258653845106,
+        "surface_energy_balance_relative_error": 0.0,
+        "coefficient_prediction_seconds": 3.3999676816165447e-06
+      }
+    ],
+    "scope": "Constant-property, fixed-geometry, linear steady conduction only. No claim of general ROM extrapolation reliability or end-to-end speedup.",
+    "data_leakage_check": "Only nine training columns enter SVD and coefficient regression; both test solutions are excluded."
+  },
+  "fine": {
+    "training_cases": [
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9
+    ],
+    "held_out_cases": [
+      10,
+      11
+    ],
+    "radial_nodes": 33,
+    "retained_modes": 2,
+    "singular_values": [
+      2.3138906342209014,
+      0.07274095877057472,
+      4.2218563380316417e-10,
+      3.0161233103210494e-10,
+      1.4828830578926707e-16,
+      3.7846523030001276e-17,
+      3.483279032208885e-17,
+      2.504926659223136e-17,
+      1.9304381312839058e-17
+    ],
+    "retained_energy": 1.0,
+    "training_weighted_projection_relative_error": 2.2412424192589543e-10,
+    "offline_pod_and_fit_seconds": 0.00036639999598264694,
+    "tests": [
+      {
+        "case": 10,
+        "scope": "held_out_interpolation",
+        "q": 100000000.0,
+        "h": 15000.0,
+        "weighted_temperature_rise_relative_error": 3.5742121546265884e-10,
+        "peak_temperature_rise_relative_error": 1.4487986979497836e-10,
+        "fom_peak_vs_analytic_relative_error": 0.0008033388636361977,
+        "surface_energy_balance_relative_error": 2.499996298865881e-09,
+        "coefficient_prediction_seconds": 6.599992047995329e-06
+      },
+      {
+        "case": 11,
+        "scope": "out_of_training_range",
+        "q": 200000000.0,
+        "h": 5000.0,
+        "weighted_temperature_rise_relative_error": 1.216622386695055e-10,
+        "peak_temperature_rise_relative_error": 6.957381618346782e-11,
+        "fom_peak_vs_analytic_relative_error": 0.0006797484615384191,
+        "surface_energy_balance_relative_error": 0.0,
+        "coefficient_prediction_seconds": 3.100023604929447e-06
+      }
+    ],
+    "scope": "Constant-property, fixed-geometry, linear steady conduction only. No claim of general ROM extrapolation reliability or end-to-end speedup.",
+    "data_leakage_check": "Only nine training columns enter SVD and coefficient regression; both test solutions are excluded."
+  },
+  "full_snapshot_source": "validation/normal/snapshots.csv",
+  "public_profile": "snapshot-profile.csv",
+  "scope": "Constant-property, fixed-geometry, linear steady conduction only. No claim of general ROM extrapolation reliability or end-to-end speedup."
+}
