@@ -1,0 +1,218 @@
+{
+  "date": "2026-10-14",
+  "status": "solved",
+  "validated_at": "2026-10-14T10:39:27.892970+00:00",
+  "runs": {
+    "normal": {
+      "case": "normal",
+      "returncode": 0,
+      "errors": 0,
+      "warnings": 2,
+      "input_sha256": "dfc6c56b4df83a77fffdcd680d1f4a6cf5e56511679978f0d8bcdd11657c6e2d"
+    },
+    "soft": {
+      "case": "soft",
+      "returncode": 0,
+      "errors": 0,
+      "warnings": 2,
+      "input_sha256": "96695cc85a41cd1b75182da72b4880d9b26b6e665ba3bc3afb13d9277c28bfd5"
+    },
+    "stiff": {
+      "case": "stiff",
+      "returncode": 0,
+      "errors": 0,
+      "warnings": 2,
+      "input_sha256": "f22c076aa7baf57ab1339cb2d89303ef2368c2a4ec33e3abda9ffcb8f06c4fcc"
+    },
+    "fine": {
+      "case": "fine",
+      "returncode": 0,
+      "errors": 0,
+      "warnings": 3,
+      "input_sha256": "91977b163cfe240a04fc259d01a19c7eb186d6c13912b6bd4c9828ceca3b9057"
+    },
+    "tied": {
+      "case": "tied",
+      "returncode": 0,
+      "errors": 0,
+      "warnings": 1,
+      "input_sha256": "e8748f770fd69de2b2367ce50950c8d1a0b27d89f27b2d2030303b7d6a33e33c"
+    }
+  },
+  "actual_results": {
+    "normal": [
+      {
+        "step": 1.0,
+        "T_K": 303.0,
+        "Utip_m": 1e-05,
+        "Rbase_N": 0.0,
+        "Rstop_N": 0.0,
+        "Fcontact_N": 0.0,
+        "STAT": 1.0,
+        "gap_m": 1e-05
+      },
+      {
+        "step": 2.0,
+        "T_K": 333.0,
+        "Utip_m": 2.01980198e-05,
+        "Rbase_N": 396.039604,
+        "Rstop_N": -396.039604,
+        "Fcontact_N": -396.0396118,
+        "STAT": 2.0,
+        "gap_m": -1.98019802e-07
+      },
+      {
+        "step": 3.0,
+        "T_K": 293.0,
+        "Utip_m": 1.694065895e-22,
+        "Rbase_N": 0.0,
+        "Rstop_N": 0.0,
+        "Fcontact_N": 0.0,
+        "STAT": 1.0,
+        "gap_m": 2e-05
+      }
+    ],
+    "soft": [
+      {
+        "step": 1.0,
+        "T_K": 303.0,
+        "Utip_m": 1e-05,
+        "Rbase_N": 0.0,
+        "Rstop_N": 0.0,
+        "Fcontact_N": 0.0,
+        "STAT": 1.0,
+        "gap_m": 1e-05
+      },
+      {
+        "step": 2.0,
+        "T_K": 333.0,
+        "Utip_m": 2.181818182e-05,
+        "Rbase_N": 363.6363636,
+        "Rstop_N": -363.6363636,
+        "Fcontact_N": -363.6363525,
+        "STAT": 2.0,
+        "gap_m": -1.818181818e-06
+      },
+      {
+        "step": 3.0,
+        "T_K": 293.0,
+        "Utip_m": 1.694065895e-22,
+        "Rbase_N": 0.0,
+        "Rstop_N": 0.0,
+        "Fcontact_N": 0.0,
+        "STAT": 1.0,
+        "gap_m": 2e-05
+      }
+    ],
+    "stiff": [
+      {
+        "step": 1.0,
+        "T_K": 303.0,
+        "Utip_m": 1e-05,
+        "Rbase_N": 0.0,
+        "Rstop_N": 0.0,
+        "Fcontact_N": 0.0,
+        "STAT": 1.0,
+        "gap_m": 1e-05
+      },
+      {
+        "step": 2.0,
+        "T_K": 333.0,
+        "Utip_m": 2.001998002e-05,
+        "Rbase_N": 399.6003996,
+        "Rstop_N": -399.6003996,
+        "Fcontact_N": -399.6004028,
+        "STAT": 2.0,
+        "gap_m": -1.998001998e-08
+      },
+      {
+        "step": 3.0,
+        "T_K": 293.0,
+        "Utip_m": -1.694065895e-22,
+        "Rbase_N": 0.0,
+        "Rstop_N": 0.0,
+        "Fcontact_N": 0.0,
+        "STAT": 1.0,
+        "gap_m": 2e-05
+      }
+    ],
+    "fine": [
+      {
+        "step": 1.0,
+        "T_K": 303.0,
+        "Utip_m": 1e-05,
+        "Rbase_N": 0.0,
+        "Rstop_N": 0.0,
+        "Fcontact_N": 0.0,
+        "STAT": 1.0,
+        "gap_m": 1e-05
+      },
+      {
+        "step": 2.0,
+        "T_K": 333.0,
+        "Utip_m": 2.01980198e-05,
+        "Rbase_N": 396.039604,
+        "Rstop_N": -396.039604,
+        "Fcontact_N": -396.0396118,
+        "STAT": 2.0,
+        "gap_m": -1.98019802e-07
+      },
+      {
+        "step": 3.0,
+        "T_K": 293.0,
+        "Utip_m": 1.694065895e-22,
+        "Rbase_N": 0.0,
+        "Rstop_N": 0.0,
+        "Fcontact_N": 0.0,
+        "STAT": 1.0,
+        "gap_m": 2e-05
+      }
+    ],
+    "tied": [
+      {
+        "step": 1.0,
+        "T_K": 303.0,
+        "Utip_m": 0.0,
+        "Rbase_N": 200.0,
+        "Rstop_N": -200.0,
+        "Fcontact_N": 0.0,
+        "STAT": 0.0,
+        "gap_m": 2e-05
+      },
+      {
+        "step": 2.0,
+        "T_K": 333.0,
+        "Utip_m": 0.0,
+        "Rbase_N": 800.0,
+        "Rstop_N": -800.0,
+        "Fcontact_N": 0.0,
+        "STAT": 0.0,
+        "gap_m": 2e-05
+      },
+      {
+        "step": 3.0,
+        "T_K": 293.0,
+        "Utip_m": 0.0,
+        "Rbase_N": 0.0,
+        "Rstop_N": 0.0,
+        "Fcontact_N": 0.0,
+        "STAT": 0.0,
+        "gap_m": 2e-05
+      }
+    ]
+  },
+  "reference": {
+    "rod_stiffness_N_per_m": 20000000.0,
+    "rigid_closed_force_N": 400,
+    "formula": "F=Krod*Kcontact/(Krod+Kcontact)*max(alpha*dT*L-g0,0)"
+  },
+  "relative_penalty_error_to_rigid": {
+    "normal": 0.009900990000000007,
+    "soft": 0.09090909100000005,
+    "stiff": 0.0009990009999999926,
+    "fine": 0.009900990000000007
+  },
+  "mesh_subdivision_max_U_difference_m": 0.0,
+  "warning_assessment": "开间隙/冷却接近零参考力产生2—3条收敛参照提醒，已以独立解析式、双端反力及状态核对；绑定全约束对照无活动自由度提醒1条，热反力仍由单元计算且与EAαΔT一致。警告保留，不称无警告。",
+  "limitations": "常弹性一维杆对规定温度与轴向挡块；无导热、摩擦、面接触和弯曲，不是控制棒落棒或完整燃料性能验证。"
+}

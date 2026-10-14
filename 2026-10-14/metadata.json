@@ -1,0 +1,32 @@
+{
+  "date": "2026-10-14",
+  "lesson": 32,
+  "topic": "Mechanical接触与模型简化：热间隙开闭、罚刚度及绑定误差",
+  "difficulty": "进阶",
+  "commands": [
+    "LINK180",
+    "CONTA178",
+    "KEYOPT",
+    "RMODIF",
+    "TREF",
+    "BF",
+    "NSUBST",
+    "ETABLE",
+    "SET"
+  ],
+  "validation_status": "solved",
+  "prerequisite": "第30、31课",
+  "model_assumptions": "一维等效杆在均匀规定温度下抵住固定挡块；小应变、常弹性、无摩擦、20微米初始间隙。核燃料/堆内支承简化机制教学，不代表完整燃料棒或控制棒，也不求导热或热接触导热。",
+  "references": [
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_elem/Hlp_E_CONTA178.html",
+    "https://ansyshelp.ansys.com/public/Views/Secured/corp/v242/en/ans_elem/Hlp_E_LINK180.html"
+  ],
+  "extra_assets": [
+    "validation-summary.json",
+    "contact-results.csv"
+  ],
+  "validation_note": "MAPDL 2023 R1五个隔离工况均返回0、错误0；独立解析反力/位移、双端平衡、接触状态及杆二分验证通过。标准闭接触反力396.039604 N，穿透0.198019802 μm；零间隙绑定替代分别为200/800 N。仅限定一维教学模型。",
+  "validated_at": "2026-10-14T10:39:27.892970+00:00",
+  "input_sha256": "dfc6c56b4df83a77fffdcd680d1f4a6cf5e56511679978f0d8bcdd11657c6e2d",
+  "validation_summary": "validation-summary.json"
+}
